@@ -77,6 +77,10 @@ export default function DepartmentsList({ navigation }) {
 
       <Searchbar placeholder="Buscar por nombre o dirección" value={query} onChangeText={setQuery} style={{ marginVertical: 8 }} />
 
+      <View style={styles.searchButtonRow}>
+        <PaperButton icon="magnify" mode="contained" onPress={() => navigation.navigate('Search')} style={{ flex: 1 }}>Búsqueda Avanzada</PaperButton>
+      </View>
+
       <View style={styles.sortRow}>
         <PaperButton icon="currency-usd" mode={sortBy === 'priceAsc' ? 'contained' : 'outlined'} onPress={() => setSortBy('priceAsc')}>Precio ↑</PaperButton>
         <PaperButton icon="currency-usd" mode={sortBy === 'priceDesc' ? 'contained' : 'outlined'} onPress={() => setSortBy('priceDesc')} style={{ marginLeft: 8 }}>Precio ↓</PaperButton>
@@ -140,4 +144,5 @@ const styles = StyleSheet.create({
   bedroomFilters: { flexDirection: 'row', flexWrap: 'wrap' },
   sortRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' },
   resultsRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap' },
+  searchButtonRow: { flexDirection: 'row', marginBottom: 12 },
 });

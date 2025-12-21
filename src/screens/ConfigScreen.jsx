@@ -6,7 +6,7 @@ import { useAppContext } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
 
 export default function ConfigScreen() {
-  const { isDarkTheme, toggleTheme, logout, user, canManageUsers, canViewReports } = useAppContext();
+  const { isDarkTheme, toggleTheme, logout, user, canManageUsers, canViewReports, canViewSuperAdminStats } = useAppContext();
   const navigation = useNavigation();
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -53,6 +53,10 @@ export default function ConfigScreen() {
 
           {canManageUsers(user) && (
             <Button mode="outlined" onPress={() => navigation.navigate('UserManagement')} style={styles.actionBtn}>Gestionar usuarios</Button>
+          )}
+
+          {canViewSuperAdminStats(user) && (
+            <Button mode="contained" onPress={() => navigation.navigate('SuperAdminDashboard')} style={[styles.actionBtn, { marginBottom: 8, backgroundColor: theme.colors.primary }]}>📊 Panel Super Admin</Button>
           )}
 
           <Button mode="outlined" onPress={() => { /* export settings */ }} style={styles.actionBtn}>Exportar configuración</Button>

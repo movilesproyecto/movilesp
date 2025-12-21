@@ -44,8 +44,33 @@ export function AppProvider({ children }) {
     ]);
 
     const [reservations, setReservations] = useState([
-        { id: 'r1', deptId: '1', date: '2025-12-15', time: '10:00', duration: '1h', user: 'johan11gamerez@gmail.com', status: 'confirmed' },
+        { id: 'r1', deptId: '1', date: '2025-12-15', time: '10:00', duration: '1h', user: 'johan11gamerez@gmail.com', status: 'confirmed', amount: 45 },
     ]);
+
+    // Ganancias mensuales y estadísticas (solo para SuperAdmin)
+    const [monthlyEarnings, setMonthlyEarnings] = useState([
+        { month: 'Enero', earnings: 2450, reservations: 12, occupancy: 75 },
+        { month: 'Febrero', earnings: 2800, reservations: 14, occupancy: 82 },
+        { month: 'Marzo', earnings: 3100, reservations: 16, occupancy: 85 },
+        { month: 'Abril', earnings: 2900, reservations: 15, occupancy: 80 },
+        { month: 'Mayo', earnings: 3400, reservations: 18, occupancy: 90 },
+        { month: 'Junio', earnings: 3200, reservations: 17, occupancy: 88 },
+        { month: 'Julio', earnings: 3600, reservations: 19, occupancy: 92 },
+        { month: 'Agosto', earnings: 3500, reservations: 18, occupancy: 91 },
+        { month: 'Septiembre', earnings: 3100, reservations: 16, occupancy: 85 },
+        { month: 'Octubre', earnings: 3300, reservations: 17, occupancy: 89 },
+        { month: 'Noviembre', earnings: 3150, reservations: 16, occupancy: 86 },
+        { month: 'Diciembre', earnings: 2450, reservations: 12, occupancy: 75 },
+    ]);
+
+    // Estadísticas globales del sistema
+    const [systemStats, setSystemStats] = useState({
+        totalUsers: 0,
+        activeReservations: 0,
+        totalDepartments: 0,
+        averageRating: 0,
+        totalEarningsCurrentYear: 0,
+    });
 
     // Registrar un nuevo usuario
     const register = (nombre, correo, password, extras = {}) => {
@@ -137,7 +162,7 @@ export function AppProvider({ children }) {
     const isAdmin = (userObj) => hasRole(userObj, Roles.ADMIN);
     const isSuperAdmin = (userObj) => hasRole(userObj, Roles.SUPERADMIN);
 
-    // Permissions map: define capabilities per role
+    // Permissions map: define capabilities por role
     const permissions = {
         [Roles.USER]: {
             createDepartment: false,
@@ -149,6 +174,7 @@ export function AppProvider({ children }) {
             manageReservations: false,
             manageUsers: false,
             viewReports: false,
+            viewSuperAdminStats: false,
         },
         [Roles.ADMIN]: {
             createDepartment: true,
@@ -160,6 +186,7 @@ export function AppProvider({ children }) {
             manageReservations: true,
             manageUsers: true,
             viewReports: true,
+            viewSuperAdminStats: false,
         },
         [Roles.SUPERADMIN]: {
             createDepartment: true,
@@ -171,6 +198,7 @@ export function AppProvider({ children }) {
             manageReservations: true,
             manageUsers: true,
             viewReports: true,
+            viewSuperAdminStats: true,
         },
     };
 
@@ -192,6 +220,7 @@ export function AppProvider({ children }) {
     const canManageUsers = (userObj) => canPerform(userObj, 'manageUsers');
     const canViewReports = (userObj) => canPerform(userObj, 'viewReports');
     const canApproveReservation = (userObj) => canPerform(userObj, 'manageReservations');
+    const canViewSuperAdminStats = (userObj) => canPerform(userObj, 'viewSuperAdminStats');
 
     // Friendly label for roles
     const roleLabel = (roleOrUser) => {
@@ -242,13 +271,32 @@ export function AppProvider({ children }) {
         return { success: true };
     };
 
-    const createReservation = ({ deptId, date, time, duration }) => {
+    const createReservation = ({ deptId, date, time, duration, paymentMethod, status = 'pending' }) => {
         if (!canCreateReservation(user)) return { success: false, message: 'No tienes permisos para crear reservas.' };
         const id = `r${reservations.length + 1}`;
-        const newRes = { id, deptId, date, time, duration, user: user?.correo || 'anon', status: 'pending' };
+        
+        // Obtener el departamento para el precio
+        const dept = departments.find(d => d.id === deptId);
+        const amount = dept?.pricePerNight || 0;
+        
+        const newRes = { 
+            id, 
+            deptId, 
+            date, 
+            time, 
+            duration, 
+            user: user?.correo || 'anon', 
+            status: status,
+            paymentMethod: paymentMethod || null,
+            amount: amount,
+            paymentDate: paymentMethod ? new Date().toISOString().split('T')[0] : null,
+        };
         setReservations((r) => [...r, newRes]);
         // show snackbar if available
-        if (typeof showSnackbar === 'function') showSnackbar('Reserva creada y en espera de aprobación');
+        const message = paymentMethod 
+            ? `Reserva confirmada. Pago procesado con ${paymentMethod}`
+            : 'Reserva creada y en espera de aprobación';
+        if (typeof showSnackbar === 'function') showSnackbar(message);
         return { success: true, data: newRes };
     };
 
@@ -381,10 +429,13 @@ export function AppProvider({ children }) {
                 canManageUsers,
                 canViewReports,
                 canApproveReservation,
+                canViewSuperAdminStats,
                 approveReservation,
                 rejectReservation,
                 departments,
                 reservations,
+                monthlyEarnings,
+                systemStats,
                 snackbarVisible,
                 snackbarMessage,
                 showSnackbar,
