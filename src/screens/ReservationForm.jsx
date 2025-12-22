@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, Alert, Picker } from 'react-native';
+import { View, ScrollView, StyleSheet, TextInput, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useTheme, Text, Button, Card } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 
@@ -21,10 +22,16 @@ export default function ReservationForm({ route, navigation }) {
   }, [departments]);
 
   const onSubmit = () => {
-    if (!canCreateReservation(user)) { 
-      Alert.alert('Acceso denegado', 'No puedes crear reservas.'); 
-      navigation.goBack(); 
-      return; 
+    if (!canCreateReservation(user)) {
+      Alert.alert(
+        'Acceso requerido',
+        'Necesitas iniciar sesión para crear una reserva.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Iniciar sesión', onPress: () => navigation.navigate('Perfil') },
+        ]
+      );
+      return;
     }
 
     // Obtener el departamento seleccionado para pasar a la pantalla de pago
