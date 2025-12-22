@@ -106,17 +106,26 @@ export default function DashboardTabs() {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.disabled,
+        tabBarInactiveTintColor: theme.colors.placeholder,
         tabBarLabelStyle: {
-          fontSize: 11,
-          marginBottom: 4,
+          fontSize: 12,
+          marginBottom: 6,
+          fontWeight: '600',
         },
         tabBarStyle: {
-          height: 65,
-          paddingBottom: 8,
-          backgroundColor: theme.colors.topBar,
+          height: 70,
+          paddingBottom: 10,
+          paddingTop: 8,
+          backgroundColor: theme.colors.surface,
+          borderTopWidth: 1,
+          borderTopColor: theme.colors.outline,
+          elevation: 8,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
         },
-        tabBarIcon: ({ color }) => {
+        tabBarIcon: ({ color, size }) => {
           let iconName = 'home';
           switch (route.name) {
             case 'Inicio':
@@ -129,10 +138,10 @@ export default function DashboardTabs() {
               iconName = 'heart';
               break;
             case 'Perfil':
-              iconName = 'user';
+              iconName = 'user-circle';
               break;
             case 'Mas':
-              iconName = 'ellipsis-h';
+              iconName = 'bars';
               break;
             default:
               iconName = 'home';
@@ -140,7 +149,7 @@ export default function DashboardTabs() {
           return (
             <FontAwesome
               name={iconName}
-              size={24}
+              size={26}
               color={color}
               style={{ marginTop: 2 }}
             />
@@ -148,11 +157,44 @@ export default function DashboardTabs() {
         },
       })}
     >
-      <Tab.Screen name="Inicio" component={InicioScreen} />
-      <Tab.Screen name="Departamentos" component={DepartmentsStack} options={{ headerShown: false }} />
-      <Tab.Screen name="Favoritos" component={FavoritesScreen} options={{ headerShown: false }} />
-      <Tab.Screen name="Perfil" component={PerfilScreen} />
-      <Tab.Screen name="Mas" component={MoreStackScreen} options={{ headerShown: false }} />
+      <Tab.Screen 
+        name="Inicio" 
+        component={InicioScreen}
+        options={{ 
+          tabBarLabel: '🏠 Inicio',
+        }} 
+      />
+      <Tab.Screen 
+        name="Departamentos" 
+        component={DepartmentsStack} 
+        options={{ 
+          headerShown: false,
+          tabBarLabel: '🏢 Departamentos',
+        }} 
+      />
+      <Tab.Screen 
+        name="Favoritos" 
+        component={FavoritesScreen} 
+        options={{ 
+          headerShown: false,
+          tabBarLabel: '❤️ Favoritos',
+        }} 
+      />
+      <Tab.Screen 
+        name="Perfil" 
+        component={PerfilScreen}
+        options={{
+          tabBarLabel: '👤 Perfil',
+        }}
+      />
+      <Tab.Screen 
+        name="Mas" 
+        component={MoreStackScreen} 
+        options={{ 
+          headerShown: false,
+          tabBarLabel: '⋮ Más',
+        }} 
+      />
     </Tab.Navigator>
   );
 }

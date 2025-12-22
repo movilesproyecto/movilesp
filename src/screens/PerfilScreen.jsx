@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
-import { View, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { View, ScrollView, StyleSheet, Dimensions, TouchableOpacity, StatusBar } from 'react-native';
 import { Avatar, Card, Text, Divider, Button, IconButton, useTheme, Chip, ProgressBar } from 'react-native-paper';
-import { FontAwesome } from '@expo/vector-icons';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { BarChart, LineChart } from 'react-native-chart-kit';
 import { useAppContext } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
@@ -45,75 +45,118 @@ export default function PerfilScreen() {
 
   return (
     <ScrollView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
-      {/* Header Card */}
-      <Card style={[styles.headerCard, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content style={styles.headerContent}>
+      {/* Header Card Mejorado */}
+      <View style={[styles.headerGradient, { backgroundColor: theme.colors.primary }]}>
+        <View style={styles.headerContent}>
           <View style={styles.avatarWrap}>
-            <Avatar.Text size={88} label={inicial} style={{ backgroundColor: theme.colors.primary }} />
-            <View style={[styles.statusBadge, { backgroundColor: theme.colors.success }]}>
+            <Avatar.Text 
+              size={96} 
+              label={inicial} 
+              style={{ backgroundColor: theme.colors.secondary }}
+            />
+            <View style={[styles.statusBadge, { backgroundColor: '#10B981' }]}>
               <FontAwesome name="check-circle" size={16} color="white" />
             </View>
           </View>
           <View style={styles.userInfo}>
-            <Text variant="headlineSmall" style={styles.name}>{nombre}</Text>
-            <Chip icon="badge" style={{ marginVertical: 4 }}>{roleLabel(user)}</Chip>
-            <Text style={[styles.email, { color: theme.colors.disabled }]}>{user?.correo}</Text>
-            <View style={styles.actionsRow}>
-              <Button mode="contained" size="small" onPress={() => navigation.navigate('ConfiguracionMain', { screen: 'EditProfile' })}>
-                Editar
-              </Button>
-              <IconButton icon="logout-variant" size={20} onPress={() => { logout(); navigation.reset({ index: 0, routes: [{ name: 'Login' }] }); }} />
+            <Text style={[styles.name, { color: '#FFFFFF' }]}>{nombre}</Text>
+            <View style={styles.roleContainer}>
+              <Chip 
+                icon="badge" 
+                style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
+                textStyle={{ color: '#FFFFFF', fontWeight: '600', fontSize: 12 }}
+              >
+                {roleLabel(user)}
+              </Chip>
             </View>
+            <Text style={[styles.email, { color: 'rgba(255,255,255,0.8)' }]}>
+              📧 {user?.correo}
+            </Text>
           </View>
-        </Card.Content>
-      </Card>
-
-      {/* Estadísticas principales */}
-      <View style={styles.statsGrid}>
-        <StatCard
-          title="Reservas"
-          value={userStats.totalReservations}
-          icon="calendar"
-          color={theme.colors.primary}
-          theme={theme}
-        />
-        <StatCard
-          title="Confirmadas"
-          value={userStats.confirmedReservations}
-          icon="check-circle"
-          color={theme.colors.success}
-          theme={theme}
-        />
-        <StatCard
-          title="Gastado"
-          value={`$${userStats.totalSpent}`}
-          icon="money"
-          color={theme.colors.warning}
-          theme={theme}
-        />
-        <StatCard
-          title="Miembro"
-          value={userStats.memberSince}
-          icon="calendar-check"
-          color={theme.colors.info}
-          theme={theme}
-        />
+        </View>
+        
+        <View style={styles.actionsRow}>
+          <Button 
+            mode="contained-tonal" 
+            size="small" 
+            onPress={() => navigation.navigate('ConfiguracionMain', { screen: 'EditProfile' })}
+            style={{ flex: 1, borderRadius: 8 }}
+            buttonColor='rgba(255,255,255,0.3)'
+            labelStyle={{ color: '#FFFFFF' }}
+          >
+            ✏️ Editar
+          </Button>
+          <TouchableOpacity 
+            style={[styles.logoutBtn, { backgroundColor: 'rgba(220, 38, 38, 0.9)' }]}
+            onPress={() => { 
+              logout(); 
+              navigation.reset({ index: 0, routes: [{ name: 'Login' }] }); 
+            }}
+          >
+            <FontAwesome name="sign-out" size={18} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
 
-      {/* Estado de cuenta */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+      {/* Estadísticas principales - Mejorado */}
+      <View style={[styles.statsSection, { paddingHorizontal: 16, marginVertical: 16 }]}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>📊 Mi Actividad</Text>
+        <View style={styles.statsGrid}>
+          <StatCard
+            title="Reservas"
+            value={userStats.totalReservations}
+            icon="calendar"
+            color={theme.colors.primary}
+            theme={theme}
+          />
+          <StatCard
+            title="Confirmadas"
+            value={userStats.confirmedReservations}
+            icon="check-circle"
+            color='#10B981'
+            theme={theme}
+          />
+          <StatCard
+            title="Gastado"
+            value={`$${userStats.totalSpent}`}
+            icon="dollar"
+            color={theme.colors.warning}
+            theme={theme}
+          />
+          <StatCard
+            title="Miembro"
+            value={userStats.memberSince}
+            icon="calendar-check"
+            color={theme.colors.secondary}
+            theme={theme}
+          />
+        </View>
+      </View>
+
+      {/* Estado de cuenta - Mejorado */}
+      <Card style={[styles.card, { backgroundColor: theme.colors.surface, marginHorizontal: 16, marginBottom: 16 }]}>
         <Card.Content>
           <View style={styles.accountStatusRow}>
             <View>
-              <Text style={{ fontSize: 12, color: theme.colors.disabled }}>Estado de cuenta</Text>
-              <Text style={{ fontSize: 16, fontWeight: 'bold', marginTop: 4 }}>{userStats.accountStatus}</Text>
+              <Text style={{ fontSize: 12, color: theme.colors.placeholder, fontWeight: '500' }}>Estado de Cuenta</Text>
+              <Text style={[{ fontSize: 18, fontWeight: '700', marginTop: 4, color: theme.colors.text }]}>
+                ✅ {userStats.accountStatus}
+              </Text>
             </View>
-            <Chip icon="check" style={{ backgroundColor: theme.colors.success }}>
+            <Chip 
+              icon="check-circle" 
+              style={{ backgroundColor: '#10B98120' }}
+              textStyle={{ color: '#10B981', fontWeight: '700' }}
+            >
               Verificado
             </Chip>
           </View>
-          <ProgressBar progress={0.8} style={{ marginTop: 12, height: 6 }} />
-          <Text style={{ fontSize: 11, color: theme.colors.disabled, marginTop: 6 }}>
+          <ProgressBar 
+            progress={0.8} 
+            style={{ marginTop: 14, height: 8, borderRadius: 4, backgroundColor: theme.colors.surfaceVariant }} 
+            color={theme.colors.primary}
+          />
+          <Text style={{ fontSize: 11, color: theme.colors.placeholder, marginTop: 8, fontWeight: '500' }}>
             80% perfil completado
           </Text>
         </Card.Content>
@@ -136,7 +179,7 @@ export default function PerfilScreen() {
       {/* Gráfico de actividad */}
       <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
         <Card.Content>
-          <Text style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 12 }}>Actividad (últimos 6 meses)</Text>
+          <Text style={[styles.cardTitle, { color: theme.colors.text }]}>Actividad (últimos 6 meses)</Text>
           <View style={styles.chartContainer}>
             <BarChart
               data={activityData}
@@ -145,8 +188,8 @@ export default function PerfilScreen() {
               chartConfig={{
                 backgroundGradientFrom: theme.colors.surface,
                 backgroundGradientTo: theme.colors.surface,
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                color: (opacity = 1) => `${theme.colors.text}${Math.round(opacity * 255).toString(16)}`,
+                labelColor: (opacity = 1) => `${theme.colors.text}${Math.round(opacity * 255).toString(16)}`,
                 style: { borderRadius: 16 },
                 barPercentage: 0.6,
               }}
@@ -240,12 +283,12 @@ const StatCard = ({ title, value, icon, color, theme }) => (
 
 // Componente InfoDetailRow
 const InfoDetailRow = ({ label, value, icon, theme }) => (
-  <View style={[styles.infoDetailRow, { borderBottomColor: theme.colors.disabled }]}>
+  <View style={[styles.infoDetailRow, { borderBottomColor: theme.colors.outline }]}>
     <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
       <FontAwesome name={icon} size={16} color={theme.colors.primary} style={{ marginRight: 12, width: 20 }} />
-      <Text style={{ fontSize: 12, color: theme.colors.disabled, width: 80 }}>{label}</Text>
+      <Text style={{ fontSize: 12, color: theme.colors.placeholder, width: 80 }}>{label}</Text>
     </View>
-    <Text style={{ fontSize: 13, fontWeight: '500', flex: 1, textAlign: 'right' }}>{value}</Text>
+    <Text style={{ fontSize: 13, fontWeight: '500', flex: 1, textAlign: 'right', color: theme.colors.text }}>{value}</Text>
   </View>
 );
 
@@ -276,27 +319,163 @@ const BadgeItem = ({ label, icon, unlocked, theme }) => (
 );
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 16 },
-  headerCard: { borderRadius: 12, marginBottom: 16 },
-  headerContent: { flexDirection: 'row', alignItems: 'center' },
-  avatarWrap: { marginRight: 16, position: 'relative' },
-  statusBadge: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: 'white' },
-  userInfo: { flex: 1 },
-  name: { fontWeight: '700' },
-  email: { marginTop: 4, fontSize: 12 },
-  actionsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 },
-  statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  statCard: { width: '48%', borderRadius: 12 },
-  statCardContent: { alignItems: 'center', paddingVertical: 12 },
-  statValue: { fontSize: 18, fontWeight: 'bold', marginTop: 8 },
-  statLabel: { fontSize: 11, marginTop: 4, textAlign: 'center' },
-  card: { marginBottom: 12, borderRadius: 12 },
-  accountStatusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  infoDetailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
-  chartContainer: { alignItems: 'center', marginVertical: 8 },
-  quickAccessGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  quickAccessBtn: { width: '48%', marginBottom: 8 },
-  badgesRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-around' },
-  badgeItem: { alignItems: 'center', width: '22%' },
-  badgeIcon: { width: 50, height: 50, borderRadius: 25, justifyContent: 'center', alignItems: 'center' },
+  screen: { 
+    flex: 1, 
+  },
+  headerGradient: {
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 20 : 32,
+    paddingBottom: 24,
+    paddingHorizontal: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  headerContent: { 
+    flexDirection: 'row', 
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatarWrap: { 
+    marginRight: 16, 
+    position: 'relative' 
+  },
+  statusBadge: { 
+    position: 'absolute', 
+    bottom: 0, 
+    right: 0, 
+    width: 32, 
+    height: 32, 
+    borderRadius: 16, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    borderWidth: 3, 
+    borderColor: 'white' 
+  },
+  userInfo: { 
+    flex: 1 
+  },
+  roleContainer: {
+    marginVertical: 8,
+  },
+  name: { 
+    fontWeight: '700',
+    fontSize: 22,
+  },
+  email: { 
+    marginTop: 4, 
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  actionsRow: { 
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    gap: 8,
+  },
+  logoutBtn: {
+    padding: 10,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statsSection: {
+    
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  statsGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 10,
+  },
+  statCard: { 
+    width: '48%', 
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+  },
+  statCardContent: { 
+    alignItems: 'center', 
+    paddingVertical: 16 
+  },
+  statValue: { 
+    fontSize: 18, 
+    fontWeight: 'bold', 
+    marginTop: 8 
+  },
+  statLabel: { 
+    fontSize: 11, 
+    marginTop: 6, 
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  card: { 
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+  },
+  accountStatusRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: 12 
+  },
+  infoDetailRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    paddingVertical: 12, 
+    borderBottomWidth: 1 
+  },
+  chartContainer: { 
+    alignItems: 'center', 
+    marginVertical: 12 
+  },
+  quickAccessGrid: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 8 
+  },
+  quickAccessBtn: { 
+    width: '48%', 
+    marginBottom: 8,
+    borderRadius: 8,
+  },
+  badgesRow: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 12, 
+    justifyContent: 'space-around' 
+  },
+  badgeItem: { 
+    alignItems: 'center', 
+    width: '22%' 
+  },
+  badgeIcon: { 
+    width: 56, 
+    height: 56, 
+    borderRadius: 28, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
 });

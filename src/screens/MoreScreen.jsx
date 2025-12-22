@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   Switch,
+  StatusBar,
 } from 'react-native';
 import {
   Card,
@@ -175,19 +176,6 @@ const MoreScreen = ({ navigation }) => {
             </View>
 
             <Divider style={{ marginVertical: 12 }} />
-
-            {/* Botón Logout en Tarjeta */}
-            <Button
-              mode="contained"
-              buttonColor="#FF6B6B"
-              textColor="white"
-              onPress={handleLogout}
-              icon="logout"
-              style={styles.logoutButtonCard}
-              contentStyle={styles.logoutButtonContent}
-            >
-              Cerrar Sesión
-            </Button>
           </Card.Content>
         </Card>
 
@@ -314,11 +302,13 @@ const MoreScreen = ({ navigation }) => {
 
         {/* Logout Button */}
         <Button
-          mode="outlined"
+          mode="contained"
+          buttonColor="#FF6B6B"
+          textColor="white"
           onPress={handleLogout}
+          icon={() => <FontAwesome name="sign-out" size={16} color="white" />}
           style={styles.logoutBtn}
-          labelStyle={styles.logoutLabel}
-          icon={() => <FontAwesome name="sign-out" size={16} color="#FF6B6B" />}
+          contentStyle={{ paddingVertical: 8 }}
         >
           Cerrar Sesión
         </Button>
@@ -342,7 +332,7 @@ const createStyles = (theme) =>
     header: {
       backgroundColor: theme.colors.primary,
       padding: 20,
-      paddingTop: 30,
+      paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 16 : 30,
       flexDirection: 'row',
       alignItems: 'center',
       elevation: 4,

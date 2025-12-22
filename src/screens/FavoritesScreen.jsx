@@ -5,6 +5,7 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
+  StatusBar,
 } from 'react-native';
 import {
   Card,
@@ -204,7 +205,7 @@ const createStyles = (theme) =>
     header: {
       backgroundColor: theme.colors.primary,
       padding: 20,
-      paddingTop: 30,
+      paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 16 : 30,
       elevation: 4,
     },
     headerContent: {
