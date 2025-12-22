@@ -62,7 +62,7 @@ export default function PerfilScreen() {
             <Text style={[styles.name, { color: '#FFFFFF' }]}>{nombre}</Text>
             <View style={styles.roleContainer}>
               <Chip 
-                icon="badge" 
+                icon="shield" 
                 style={{ backgroundColor: 'rgba(255,255,255,0.2)' }}
                 textStyle={{ color: '#FFFFFF', fontWeight: '600', fontSize: 12 }}
               >

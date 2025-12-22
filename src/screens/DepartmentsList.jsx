@@ -7,7 +7,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export default function DepartmentsList({ navigation }) {
   const theme = useTheme();
-  const { user, canCreateDepartment, canEditDepartment, departments } = useAppContext();
+  const { user, canCreateDepartment, canEditDepartment, departments, isFavorite, toggleFavorite, getPromotionsByDept } = useAppContext();
   const insets = useSafeAreaInsets();
   const [sortBy, setSortBy] = useState('none');
   const [page, setPage] = useState(1);
@@ -19,61 +19,76 @@ export default function DepartmentsList({ navigation }) {
   const [bedroomsFilter, setBedroomsFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity 
-      style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: theme.colors.tertiary }]} 
-      onPress={() => navigation.navigate('DepartmentDetail', { department: item })}
-      activeOpacity={0.8}
-    >
-      <View style={styles.cardHeader}>
-        {item.images && item.images[0] ? (
-          <Image source={{ uri: item.images[0] }} style={styles.thumb} />
-        ) : (
-          <View style={[styles.thumbPlaceholder, { backgroundColor: theme.colors.surfaceVariant }]} />
-        )}
-        <View style={styles.badgeContainer}>
-          <View style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
-            <Text style={styles.badgeText}>${item.pricePerNight}</Text>
-          </View>
-          {item.rating && (
-            <View style={[styles.ratingBadge, { backgroundColor: '#FBBF24' }]}>
-              <Text style={styles.ratingText}>⭐ {item.rating}</Text>
-            </View>
-          )}
-        </View>
-      </View>
-      <View style={styles.cardContent}>
-        <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={1}>{item.name}</Text>
-        <Text style={[styles.subtitle, { color: theme.colors.placeholder }]}>📍 {item.address}</Text>
-        <View style={styles.infoRow}>
-          <Text style={[styles.infoItem, { color: theme.colors.text }]}>🛏️ {item.bedrooms} hab</Text>
-          <Text style={[styles.infoItem, { color: theme.colors.text }]}>🚿 {item.bathrooms || 2} baños</Text>
-        </View>
-        <Text style={[styles.desc, { color: theme.colors.placeholder }]} numberOfLines={2}>{item.description}</Text>
-        <View style={styles.cardActions}>
-          <PaperButton 
-            mode="contained" 
-            buttonColor={theme.colors.primary} 
-            onPress={() => navigation.navigate('DepartmentDetail', { department: item })}
-            style={{ flex: 1 }}
-          >
-            Ver detalles
-          </PaperButton>
-          {canEditDepartment(user) && (
-            <PaperButton 
-              mode="outlined" 
-              onPress={() => navigation.navigate('DepartmentForm', { department: item })} 
-              style={{ marginLeft: 8 }}
-            >
-              Editar
-            </PaperButton>
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item }) => {
+    const favorited = isFavorite(item.id);
+    const promotions = getPromotionsByDept(item.id);
+    const bestPromo = promotions.length > 0 ? promotions.reduce((prev, curr) => curr.discount > prev.discount ? curr : prev) : null;
 
-  const filtered = useMemo(() => {
+    return (
+      <TouchableOpacity 
+        style={[styles.card, { backgroundColor: theme.colors.surface, borderLeftColor: theme.colors.tertiary }]} 
+        onPress={() => navigation.navigate('DepartmentDetail', { department: item })}
+        activeOpacity={0.8}
+      >
+        <View style={styles.cardHeader}>
+          {item.images && item.images[0] ? (
+            <Image source={{ uri: item.images[0] }} style={styles.thumb} />
+          ) : (
+            <View style={[styles.thumbPlaceholder, { backgroundColor: theme.colors.surfaceVariant }]} />
+          )}
+          <View style={styles.badgeContainer}>
+            <View style={[styles.badge, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.badgeText}>${item.pricePerNight}</Text>
+            </View>
+            {item.rating && (
+              <View style={[styles.ratingBadge, { backgroundColor: '#FBBF24' }]}>
+                <Text style={styles.ratingText}>⭐ {item.rating}</Text>
+              </View>
+            )}
+            {bestPromo && (
+              <View style={[styles.promoBadge, { backgroundColor: '#F59E0B' }]}>
+                <Text style={styles.promoBadgeText}>-{bestPromo.discount}%</Text>
+              </View>
+            )}
+            <TouchableOpacity 
+              onPress={() => toggleFavorite(item.id)}
+              style={[styles.favBadge, { backgroundColor: favorited ? '#EF4444' : theme.colors.surfaceVariant }]}
+            >
+              <FontAwesome name={favorited ? 'heart' : 'heart-o'} size={16} color={favorited ? 'white' : theme.colors.disabled} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <View style={styles.cardContent}>
+          <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={1}>{item.name}</Text>
+          <Text style={[styles.subtitle, { color: theme.colors.placeholder }]}>📍 {item.address}</Text>
+          <View style={styles.infoRow}>
+            <Text style={[styles.infoItem, { color: theme.colors.text }]}>🛏️ {item.bedrooms} hab</Text>
+            <Text style={[styles.infoItem, { color: theme.colors.text }]}>🚿 {item.bathrooms || 2} baños</Text>
+          </View>
+          <Text style={[styles.desc, { color: theme.colors.placeholder }]} numberOfLines={2}>{item.description}</Text>
+          <View style={styles.cardActions}>
+            <PaperButton 
+              mode="contained" 
+              buttonColor={theme.colors.primary} 
+              onPress={() => navigation.navigate('DepartmentDetail', { department: item })}
+              style={{ flex: 1 }}
+            >
+              Ver detalles
+            </PaperButton>
+            {canEditDepartment(user) && (
+              <PaperButton 
+                mode="outlined" 
+                onPress={() => navigation.navigate('DepartmentForm', { department: item })} 
+                style={{ marginLeft: 8 }}
+              >
+                Editar
+              </PaperButton>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };  const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return (departments || []).filter((d) => {
       if (q && !(d.name.toLowerCase().includes(q) || d.address.toLowerCase().includes(q))) return false;
@@ -276,6 +291,20 @@ export default function DepartmentsList({ navigation }) {
       {canCreateDepartment(user) && (
         <FAB icon="plus" style={{ position: 'absolute', right: 16, bottom: 16 + insets.bottom }} onPress={() => navigation.navigate('DepartmentForm')} />
       )}
+      
+      <FAB 
+        icon="calculator" 
+        style={{ position: 'absolute', right: 16, bottom: 75 + insets.bottom }} 
+        onPress={() => navigation.navigate('BudgetCalculator')}
+        label="Presupuesto"
+      />
+      
+      <FAB 
+        icon="shuffle" 
+        style={{ position: 'absolute', right: 16, bottom: 135 + insets.bottom }} 
+        onPress={() => navigation.navigate('Compare')}
+        label="Comparar"
+      />
     </View>
   );
 }
@@ -377,6 +406,23 @@ const styles = StyleSheet.create({
   ratingText: {
     fontWeight: '700',
     fontSize: 12,
+  },
+  promoBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  promoBadgeText: {
+    fontWeight: '700',
+    fontSize: 12,
+    color: 'white',
+  },
+  favBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   cardContent: {
     padding: 12,

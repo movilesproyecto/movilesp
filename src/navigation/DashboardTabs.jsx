@@ -25,6 +25,10 @@ import PrivacyScreen from '../screens/PrivacyScreen';
 import SearchScreen from '../screens/SearchScreen';
 import ReviewScreen from '../screens/ReviewScreen';
 import AdminDashboard from '../screens/AdminDashboard';
+import CompareScreen from '../screens/CompareScreen';
+import BudgetCalculatorScreen from '../screens/BudgetCalculatorScreen';
+import PromotionsScreen from '../screens/PromotionsScreen';
+import PromotionForm from '../screens/PromotionForm';
 import { useAppContext } from '../context/AppContext';
 
 const Tab = createBottomTabNavigator();
@@ -35,7 +39,7 @@ function DepartmentsStack() {
   const theme = useTheme();
   return (
     <Stack.Navigator screenOptions={{ headerShown: true, headerStyle: { backgroundColor: theme.colors.topBar }, headerTintColor: theme.colors.onTopBar || theme.colors.text }}>
-      <Stack.Screen name="DepartamentosList" component={DepartmentsList} options={{ title: 'Departamentos' }} />
+      <Stack.Screen name="DepartmentsList" component={DepartmentsList} options={{ title: 'Departamentos' }} />
       <Stack.Screen name="DepartmentDetail" component={DepartmentDetail} options={{ title: 'Detalles del departamento' }} />
       <Stack.Screen name="DepartmentForm" component={DepartmentForm} options={{ title: 'Departamento' }} />
       <Stack.Screen name="Reservations" component={ReservationsList} options={{ title: 'Reservas' }} />
@@ -43,6 +47,8 @@ function DepartmentsStack() {
       <Stack.Screen name="Payment" component={PaymentScreen} options={{ title: 'Método de Pago' }} />
       <Stack.Screen name="Search" component={SearchScreen} options={{ title: 'Buscar', headerShown: false }} />
       <Stack.Screen name="Reviews" component={ReviewScreen} options={{ title: 'Reseñas', headerShown: false }} />
+      <Stack.Screen name="Compare" component={CompareScreen} options={{ title: 'Comparar Departamentos' }} />
+      <Stack.Screen name="BudgetCalculator" component={BudgetCalculatorScreen} options={{ title: 'Calculadora de Presupuesto' }} />
     </Stack.Navigator>
   );
 }
@@ -51,7 +57,7 @@ const ConfigStack = createNativeStackNavigator();
 
 function ConfigStackScreen() {
   const theme = useTheme();
-  const { user, canManageUsers, canViewReports, canApproveReservation, canViewSuperAdminStats } = useAppContext();
+  const { user, canManageUsers, canViewReports, canApproveReservation, canViewSuperAdminStats, isAdmin, isSuperAdmin } = useAppContext();
   return (
     <ConfigStack.Navigator initialRouteName="ConfiguracionMain" screenOptions={{ headerShown: true, headerStyle: { backgroundColor: theme.colors.topBar }, headerTintColor: theme.colors.onTopBar || theme.colors.text }}>
       <ConfigStack.Screen name="ConfiguracionMain" component={ConfigScreen} options={{ title: 'Configuración' }} />
@@ -64,6 +70,12 @@ function ConfigStackScreen() {
       )}
       {canViewReports(user) && (
         <ConfigStack.Screen name="Reports" component={Reports} options={{ title: 'Reportes' }} />
+      )}
+      {(isAdmin(user) || isSuperAdmin(user)) && (
+        <>
+          <ConfigStack.Screen name="Promotions" component={PromotionsScreen} options={{ title: 'Promociones' }} />
+          <ConfigStack.Screen name="PromotionForm" component={PromotionForm} options={{ title: 'Promoción' }} />
+        </>
       )}
       {canApproveReservation(user) && (
         <ConfigStack.Screen name="ReservationApprovals" component={require('../screens/ReservationApprovals').default} options={{ title: 'Aprobaciones' }} />

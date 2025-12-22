@@ -96,7 +96,7 @@ const HelpScreen = ({ navigation }) => {
           <FontAwesome name="chevron-left" size={24} color="#fff" />
         </TouchableOpacity>
         <FontAwesome
-          name="question-circle"
+          name="question"
           size={28}
           color="#fff"
           style={{ marginRight: 10 }}

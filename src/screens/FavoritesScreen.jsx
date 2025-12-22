@@ -22,14 +22,10 @@ const { width } = Dimensions.get('window');
 
 const FavoritesScreen = ({ navigation }) => {
   const theme = useTheme();
-  const { departments } = useAppContext();
+  const { getFavoriteDepartments, toggleFavorite } = useAppContext();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  // Simulated favorites - in a real app, this would come from context
-  const favoriteDepartments = departments.slice(0, 3).map(dept => ({
-    ...dept,
-    isFavorite: true,
-  }));
+  const favoriteDepartments = getFavoriteDepartments();
 
   return (
     <View style={styles.container}>
@@ -65,7 +61,7 @@ const FavoritesScreen = ({ navigation }) => {
                     color={theme.colors.primary}
                   />
                   <Text style={styles.statValue}>
-                    {(favoriteDepartments.reduce((sum, d) => sum + d.valoracion, 0) / favoriteDepartments.length).toFixed(1)}
+                    {(favoriteDepartments.reduce((sum, d) => sum + d.rating, 0) / favoriteDepartments.length).toFixed(1)}
                   </Text>
                   <Text style={styles.statLabel}>Calificación Promedio</Text>
                 </Card.Content>
@@ -79,7 +75,7 @@ const FavoritesScreen = ({ navigation }) => {
                     color={theme.colors.primary}
                   />
                   <Text style={styles.statValue}>
-                    ${Math.min(...favoriteDepartments.map(d => d.precio))}
+                    ${Math.min(...favoriteDepartments.map(d => d.pricePerNight))}
                   </Text>
                   <Text style={styles.statLabel}>Precio Mínimo</Text>
                 </Card.Content>
@@ -102,71 +98,77 @@ const FavoritesScreen = ({ navigation }) => {
               <Divider />
               <Card.Content style={styles.departmentsContainer}>
                 {favoriteDepartments.map((dept) => (
-                  <TouchableOpacity
-                    key={dept.id}
-                    onPress={() =>
-                      navigation.navigate('DepartmentDetail', {
-                        departmentId: dept.id,
-                      })
-                    }
-                  >
-                    <View style={styles.departmentItem}>
-                      <View style={styles.deptHeader}>
-                        <Text style={styles.deptName}>{dept.nombre}</Text>
-                        <View style={styles.ratingBadge}>
-                          <FontAwesome
-                            name="star"
-                            size={12}
-                            color="#FFB800"
-                          />
-                          <Text style={styles.ratingText}>
-                            {dept.valoracion}
-                          </Text>
+                  <View key={dept.id}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        navigation.navigate('DepartmentDetail', {
+                          department: dept,
+                        })
+                      }
+                    >
+                      <View style={styles.departmentItem}>
+                        <View style={styles.deptHeader}>
+                          <Text style={styles.deptName}>{dept.name}</Text>
+                          <View style={styles.ratingBadge}>
+                            <FontAwesome
+                              name="star"
+                              size={12}
+                              color="#FFB800"
+                            />
+                            <Text style={styles.ratingText}>
+                              {dept.rating}
+                            </Text>
+                          </View>
                         </View>
-                      </View>
 
-                      <Text style={styles.location}>
-                        <FontAwesome name="map-marker" /> {dept.ubicacion}
-                      </Text>
-
-                      <View style={styles.deptMeta}>
-                        <Chip
-                          icon="bed"
-                          style={styles.chip}
-                          textStyle={styles.chipText}
-                        >
-                          {dept.habitaciones} hab
-                        </Chip>
-                        <Chip
-                          icon="bath"
-                          style={styles.chip}
-                          textStyle={styles.chipText}
-                        >
-                          {dept.banos} baños
-                        </Chip>
-                      </View>
-
-                      <View style={styles.deptBottom}>
-                        <Text style={styles.price}>
-                          ${dept.precio}
-                          <Text style={styles.priceUnit}>/noche</Text>
+                        <Text style={styles.location}>
+                          <FontAwesome name="map-marker" /> {dept.address}
                         </Text>
-                        <Button
-                          mode="contained"
-                          size="small"
-                          onPress={() =>
-                            navigation.navigate('ReservationForm', {
-                              departmentId: dept.id,
-                              departmentName: dept.nombre,
-                            })
-                          }
-                        >
-                          Reservar
-                        </Button>
+
+                        <View style={styles.deptMeta}>
+                          <Chip
+                            icon="bed"
+                            style={styles.chip}
+                            textStyle={styles.chipText}
+                          >
+                            {dept.bedrooms} hab
+                          </Chip>
+                          <Chip
+                            icon="shower"
+                            style={styles.chip}
+                            textStyle={styles.chipText}
+                          >
+                            {dept.bathrooms || 2} baños
+                          </Chip>
+                        </View>
+
+                        <View style={styles.deptBottom}>
+                          <Text style={styles.price}>
+                            ${dept.pricePerNight}
+                            <Text style={styles.priceUnit}>/noche</Text>
+                          </Text>
+                          <Button
+                            mode="contained"
+                            size="small"
+                            onPress={() =>
+                              navigation.navigate('ReservationForm', {
+                                department: dept,
+                              })
+                            }
+                          >
+                            Reservar
+                          </Button>
+                          <TouchableOpacity
+                            onPress={() => toggleFavorite(dept.id)}
+                            style={{ marginLeft: 8 }}
+                          >
+                            <FontAwesome name="trash" size={18} color={theme.colors.error} />
+                          </TouchableOpacity>
+                        </View>
+                        <Divider style={{ marginTop: 12 }} />
                       </View>
-                      <Divider style={{ marginTop: 12 }} />
-                    </View>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </Card.Content>
             </Card>

@@ -251,7 +251,7 @@ const MoreScreen = ({ navigation }) => {
             onPress={() => navigation.navigate('EditProfile')}
             style={styles.accountItem}
           >
-            <FontAwesome name="edit" size={20} color={theme.colors.primary} />
+            <FontAwesome name="pencil" size={20} color={theme.colors.primary} />
             <View style={styles.accountContent}>
               <Text style={styles.accountTitle}>Editar Perfil</Text>
               <Text style={styles.accountSubtitle}>
