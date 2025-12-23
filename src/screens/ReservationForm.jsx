@@ -12,6 +12,7 @@ export default function ReservationForm({ route, navigation }) {
   const [date, setDate] = useState('2025-12-20');
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState('1h');
+  const isFormValid = dept && date && time;
 
   useEffect(() => {
     if (preDept) setDept(preDept.id);
