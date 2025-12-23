@@ -35,11 +35,11 @@ export default function ReservationForm({ route, navigation }) {
       return;
     }
 
-    const isAlreadyReserved = reservations?.some(res => 
+    const yaReservado = reservations.some(res => 
       res.deptId === dept && res.date === date
     );
 
-    if (isAlreadyReserved) {
+    if (yaReservado) {
       Alert.alert(
         'Departamento no disponible',
         'Este departamento ya tiene una reserva para la fecha seleccionada. Por favor, elige otro día.',
