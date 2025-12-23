@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Alert } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { TextInput, Button, Text, useTheme, Card, Divider, Chip } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
+import { FontAwesome } from '@expo/vector-icons';
 import { useAppContext } from '../context/AppContext';
 import ImageCarousel from '../components/ImageCarousel';
 
@@ -150,6 +151,17 @@ export default function DepartmentForm({ route, navigation }) {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* Header with back button */}
+      <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <FontAwesome name="chevron-left" size={24} color="white" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>
+          {dept ? 'Editar Departamento' : 'Nuevo Departamento'}
+        </Text>
+      </View>
+
+      <View style={{ padding: 16 }}>
       <Text variant="headlineSmall" style={{ color: theme.colors.text, marginBottom: 16, fontWeight: '700' }}>
         {dept ? 'Editar Departamento' : 'Nuevo Departamento'}
       </Text>
@@ -311,12 +323,28 @@ export default function DepartmentForm({ route, navigation }) {
           Cancelar
         </Button>
       </View>
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16 },
+  container: { flex: 1 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    gap: 12,
+  },
+  backButton: {
+    padding: 8,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    flex: 1,
+  },
   card: { marginBottom: 12, borderRadius: 10 },
   imageList: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 },
   amenityInput: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 12 },

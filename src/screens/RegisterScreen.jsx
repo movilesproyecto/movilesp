@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { TextInput, Button, Text, Snackbar, Card, useTheme, RadioButton } from 'react-native-paper';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAppContext } from '../context/AppContext';
 
 export default function RegisterScreen({ navigation }) {
@@ -13,6 +14,10 @@ export default function RegisterScreen({ navigation }) {
   const [genero, setGenero] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // Nuevo estado para la visibilidad de la contraseña
+  const [showPassword, setShowPassword] = useState(false);
+
   const theme = useTheme();
 
   const validateEmail = (value) => {
@@ -76,97 +81,217 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }] }>
-      <Card style={styles.card}>
-        <Card.Content>
-          <Text style={styles.title}>Crear cuenta</Text>
-          <TextInput
-            label="Nombre completo"
-            mode="outlined"
-            value={nombre}
-            onChangeText={setNombre}
-            style={styles.input}
-            autoCapitalize="words"
-          />
-          {nombre.length > 0 && nombre.length < 3 && (
-            <Text style={[styles.fieldError, { color: theme.colors.error }]}>Mínimo 3 caracteres</Text>
-          )}
-          <TextInput
-            label="Correo"
-            mode="outlined"
-            value={email}
-            onChangeText={setEmail}
-            style={styles.input}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-          {email.length > 0 && !validateEmail(email) && (
-            <Text style={[styles.fieldError, { color: theme.colors.error }]}>Correo inválido</Text>
-          )}
-          <TextInput
-            label="Contraseña"
-            mode="outlined"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-            style={styles.input}
-          />
-          {password.length > 0 && password.length < 6 && (
-            <Text style={[styles.fieldError, { color: theme.colors.error }]}>Mínimo 6 caracteres</Text>
-          )}
-          <TextInput
-            label="Confirmar contraseña"
-            mode="outlined"
-            secureTextEntry
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            style={styles.input}
-          />
-          <TextInput
-            label="Teléfono"
-            mode="outlined"
-            value={telefono}
-            onChangeText={setTelefono}
-            style={styles.input}
-            keyboardType="phone-pad"
-          />
-          {telefono.length > 0 && telefono.length < 7 && (
-            <Text style={[styles.fieldError, { color: theme.colors.error }]}>Número demasiado corto</Text>
-          )}
-
-          <Text style={{ marginBottom: 6 }}>Género</Text>
-          <RadioButton.Group onValueChange={setGenero} value={genero}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-              <RadioButton value="male" />
-              <Text>Masculino</Text>
-              <RadioButton value="female" />
-              <Text>Femenino</Text>
-              <RadioButton value="other" />
-              <Text>Otro</Text>
-            </View>
-          </RadioButton.Group>
-          {confirmPassword.length > 0 && password !== confirmPassword && (
-            <Text style={[styles.fieldError, { color: theme.colors.error }]}>Las contraseñas no coinciden</Text>
-          )}
-          <Button
-            mode="contained"
-            loading={loading}
-            disabled={!isFormValid || loading}
-            onPress={handleRegister}
-            style={styles.button}
-          >
-            Registrarse
-          </Button>
-          <View style={styles.loginContainer}>
-            <Text>¿Ya tienes cuenta? </Text>
-            <Button mode="text" onPress={() => navigation.goBack()} style={styles.loginButton}>
-              Inicia sesión
-            </Button>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      {/* KeyboardAvoidingView asegura que el teclado no tape el formulario */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Header decorativo */}
+          <View style={[styles.headerDecor, { backgroundColor: theme.colors.secondary }]}>
+            <FontAwesome name="user-plus" size={44} color="white" />
+            <Text style={styles.headerTitle}>Crear Cuenta</Text>
+            <Text style={styles.headerSubtitle}>Únete a nuestra comunidad</Text>
           </View>
-        </Card.Content>
-      </Card>
-      <Snackbar visible={!!error} onDismiss={() => setError('')} duration={3000} style={{ backgroundColor: theme.colors.snackbar }}>
-        <Text style={{ color: theme.colors.onSnackbar }}>{error}</Text>
+
+          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content>
+              <Text style={[styles.stepIndicator, { color: theme.colors.primary }]}>Datos Personales</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Nombre Completo</Text>
+                <TextInput
+                  label="Ingresa tu nombre completo"
+                  mode="outlined"
+                  value={nombre}
+                  onChangeText={setNombre}
+                  style={[styles.input, { backgroundColor: theme.colors.surface }]}
+                  autoCapitalize="words"
+                  left={<TextInput.Icon icon="account" color={theme.colors.primary} />}
+                  outlineColor={theme.colors.outline}
+                  activeOutlineColor={theme.colors.primary}
+                />
+                {nombre.length > 0 && nombre.length < 3 && (
+                  <View style={styles.errorContainer}>
+                    <FontAwesome name="exclamation-circle" size={12} color={theme.colors.error} />
+                    <Text style={[styles.fieldError, { color: theme.colors.error, marginLeft: 6 }]}>Mínimo 3 caracteres</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Correo Electrónico</Text>
+                <TextInput
+                  label="tu@email.com"
+                  mode="outlined"
+                  value={email}
+                  onChangeText={setEmail}
+                  style={[styles.input, { backgroundColor: theme.colors.surface }]}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                  left={<TextInput.Icon icon="email" color={theme.colors.primary} />}
+                  outlineColor={theme.colors.outline}
+                  activeOutlineColor={theme.colors.primary}
+                />
+                {email.length > 0 && !validateEmail(email) && (
+                  <View style={styles.errorContainer}>
+                    <FontAwesome name="exclamation-circle" size={12} color={theme.colors.error} />
+                    <Text style={[styles.fieldError, { color: theme.colors.error, marginLeft: 6 }]}>Correo inválido</Text>
+                  </View>
+                )}
+              </View>
+
+              <Text style={[styles.stepIndicator, { color: theme.colors.primary, marginTop: 20 }]}>Seguridad</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Contraseña</Text>
+                <TextInput
+                  label="Crea una contraseña segura"
+                  mode="outlined"
+                  secureTextEntry={!showPassword}
+                  value={password}
+                  onChangeText={setPassword}
+                  style={[styles.input, { backgroundColor: theme.colors.surface }]}
+                  left={<TextInput.Icon icon="lock" color={theme.colors.primary} />}
+                  right={
+                    <TextInput.Icon 
+                      icon={showPassword ? "eye-off" : "eye"} 
+                      onPress={() => setShowPassword(!showPassword)}
+                      color={theme.colors.primary}
+                    />
+                  }
+                  outlineColor={theme.colors.outline}
+                  activeOutlineColor={theme.colors.primary}
+                />
+                {password.length > 0 && password.length < 6 && (
+                  <View style={styles.errorContainer}>
+                    <FontAwesome name="exclamation-circle" size={12} color={theme.colors.error} />
+                    <Text style={[styles.fieldError, { color: theme.colors.error, marginLeft: 6 }]}>Mínimo 6 caracteres</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Confirmar Contraseña</Text>
+                <TextInput
+                  label="Repite tu contraseña"
+                  mode="outlined"
+                  secureTextEntry={!showPassword}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  style={[styles.input, { backgroundColor: theme.colors.surface }]}
+                  left={<TextInput.Icon icon="lock-check" color={theme.colors.primary} />}
+                  right={
+                    <TextInput.Icon 
+                      icon={showPassword ? "eye-off" : "eye"} 
+                      onPress={() => setShowPassword(!showPassword)}
+                      color={theme.colors.primary}
+                    />
+                  }
+                  outlineColor={theme.colors.outline}
+                  activeOutlineColor={theme.colors.primary}
+                />
+                {confirmPassword.length > 0 && password !== confirmPassword && (
+                  <View style={styles.errorContainer}>
+                    <FontAwesome name="exclamation-circle" size={12} color={theme.colors.error} />
+                    <Text style={[styles.fieldError, { color: theme.colors.error, marginLeft: 6 }]}>Las contraseñas no coinciden</Text>
+                  </View>
+                )}
+              </View>
+
+              <Text style={[styles.stepIndicator, { color: theme.colors.primary, marginTop: 20 }]}>Contacto</Text>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Teléfono</Text>
+                <TextInput
+                  label="+1 (555) 000-0000"
+                  mode="outlined"
+                  value={telefono}
+                  onChangeText={setTelefono}
+                  style={[styles.input, { backgroundColor: theme.colors.surface }]}
+                  keyboardType="phone-pad"
+                  left={<TextInput.Icon icon="phone" color={theme.colors.primary} />}
+                  outlineColor={theme.colors.outline}
+                  activeOutlineColor={theme.colors.primary}
+                />
+                {telefono.length > 0 && telefono.length < 7 && (
+                  <View style={styles.errorContainer}>
+                    <FontAwesome name="exclamation-circle" size={12} color={theme.colors.error} />
+                    <Text style={[styles.fieldError, { color: theme.colors.error, marginLeft: 6 }]}>Número demasiado corto</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Género</Text>
+                <View style={[styles.genderCard, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outline }]}>
+                  <RadioButton.Group onValueChange={setGenero} value={genero}>
+                    <View style={styles.radioGroup}>
+                      <View style={styles.radioItem}>
+                        <RadioButton 
+                          value="male"
+                          color={theme.colors.primary}
+                        />
+                        <Text style={[{ marginLeft: 8, color: theme.colors.text }]}>👨 Masculino</Text>
+                      </View>
+                      <View style={styles.radioItem}>
+                        <RadioButton 
+                          value="female"
+                          color={theme.colors.primary}
+                        />
+                        <Text style={[{ marginLeft: 8, color: theme.colors.text }]}>👩 Femenino</Text>
+                      </View>
+                      <View style={styles.radioItem}>
+                        <RadioButton 
+                          value="other"
+                          color={theme.colors.primary}
+                        />
+                        <Text style={[{ marginLeft: 8, color: theme.colors.text }]}>🤝 Otro</Text>
+                      </View>
+                    </View>
+                  </RadioButton.Group>
+                </View>
+              </View>
+
+              <Button
+                mode="contained"
+                loading={loading}
+                disabled={!isFormValid || loading}
+                onPress={handleRegister}
+                style={[styles.button, { backgroundColor: theme.colors.primary }]}
+                contentStyle={styles.buttonContent}
+                labelStyle={styles.buttonLabel}
+              >
+                {loading ? 'Registrando...' : 'Registrarse'}
+              </Button>
+
+              <View style={styles.divider}>
+                <View style={[styles.dividerLine, { backgroundColor: theme.colors.outline }]} />
+                <Text style={[styles.dividerText, { color: theme.colors.placeholder }]}>¿Ya tienes cuenta?</Text>
+                <View style={[styles.dividerLine, { backgroundColor: theme.colors.outline }]} />
+              </View>
+
+              <Button
+                mode="outlined"
+                onPress={() => navigation.goBack()}
+                style={[styles.loginButton, { borderColor: theme.colors.primary }]}
+                labelStyle={[styles.loginButtonLabel, { color: theme.colors.primary }]}
+              >
+                Inicia Sesión
+              </Button>
+            </Card.Content>
+          </Card>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      
+      <Snackbar 
+        visible={!!error} 
+        onDismiss={() => setError('')} 
+        duration={3000} 
+        style={[styles.snackbar, { backgroundColor: theme.colors.error }]}
+      >
+        <Text style={{ color: '#FFFFFF' }}>{error}</Text>
       </Snackbar>
     </View>
   );
@@ -175,39 +300,127 @@ export default function RegisterScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+  },
+  headerDecor: {
+    borderRadius: 16,
+    paddingVertical: 32,
+    paddingHorizontal: 24,
+    marginBottom: 24,
+    alignItems: 'center',
     justifyContent: 'center',
-    padding: 22,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginTop: 12,
+  },
+  headerSubtitle: {
+    fontSize: 13,
+    color: '#F1F5F9',
+    marginTop: 4,
   },
   card: {
-    paddingVertical: 18,
-    paddingHorizontal: 12,
-    elevation: 5,
-    borderRadius: 10,
+    paddingVertical: 24,
+    paddingHorizontal: 16,
+    marginBottom: 24,
+    borderRadius: 12,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 18,
+  stepIndicator: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 12,
+    marginTop: 16,
+  },
+  inputGroup: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
   },
   input: {
-    marginBottom: 14,
+    marginBottom: 0,
+    borderRadius: 8,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingHorizontal: 4,
   },
   fieldError: {
     fontSize: 12,
-    marginBottom: 8,
+    fontWeight: '500',
+  },
+  genderCard: {
+    borderRadius: 10,
+    borderWidth: 1,
+    padding: 12,
+  },
+  radioGroup: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    flexWrap: 'wrap',
+  },
+  radioItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 4,
   },
   button: {
-    marginTop: 12,
-    paddingVertical: 6,
+    marginTop: 20,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
-  loginContainer: {
+  buttonContent: {
+    paddingVertical: 8,
+  },
+  buttonLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  divider: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+  },
+  dividerText: {
+    marginHorizontal: 12,
+    fontSize: 12,
+    fontWeight: '500',
   },
   loginButton: {
-    padding: 0,
+    borderWidth: 2,
+    borderRadius: 8,
+    paddingVertical: 4,
+  },
+  loginButtonLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  snackbar: {
+    borderRadius: 8,
+    marginHorizontal: 16,
   },
 });

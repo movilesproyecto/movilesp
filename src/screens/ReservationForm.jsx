@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Picker, Alert } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { View, ScrollView, StyleSheet, TextInput, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
+import { useTheme, Text, Button, Card } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 
 export default function ReservationForm({ route, navigation }) {
   const preDept = route?.params?.department;
   const theme = useTheme();
-  const { user, canCreateReservation, createReservation, departments } = useAppContext();
+  const { user, canCreateReservation, departments } = useAppContext();
   const [dept, setDept] = useState(preDept ? preDept.id : (departments && departments[0] ? departments[0].id : null));
   const [date, setDate] = useState('2025-12-20');
   const [time, setTime] = useState('09:00');
@@ -21,40 +22,93 @@ export default function ReservationForm({ route, navigation }) {
   }, [departments]);
 
   const onSubmit = () => {
-    if (!canCreateReservation(user)) { Alert.alert('Acceso denegado', 'No puedes crear reservas.'); navigation.goBack(); return; }
-    createReservation({ deptId: dept, date, time, duration });
-    Alert.alert('Reserva creada', `Dept: ${dept}\nFecha: ${date} ${time}`);
-    navigation.navigate('Reservations');
+    if (!canCreateReservation(user)) {
+      Alert.alert(
+        'Acceso requerido',
+        'Necesitas iniciar sesión para crear una reserva.',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Iniciar sesión', onPress: () => navigation.navigate('Perfil') },
+        ]
+      );
+      return;
+    }
+
+    // Obtener el departamento seleccionado para pasar a la pantalla de pago
+    const selectedDept = departments.find(d => d.id === dept);
+
+    // Navegar a la pantalla de pago con los datos de la reserva
+    navigation.navigate('Payment', {
+      reservation: {
+        deptId: dept,
+        date,
+        time,
+        duration,
+      },
+      department: selectedDept,
+    });
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <Text style={styles.header}>Nueva Reserva</Text>
-      <Text style={styles.label}>Departamento</Text>
-      <Picker selectedValue={dept} onValueChange={(v) => setDept(v)} style={styles.picker}>
-        {(departments || []).map((d) => (
-          <Picker.Item key={d.id} label={`${d.name} — ${d.address}`} value={d.id} />
-        ))}
-      </Picker>
+    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Card style={[styles.headerCard, { backgroundColor: theme.colors.surface }]}>
+        <Card.Content>
+          <Text variant="headlineMedium" style={{ fontWeight: 'bold', marginBottom: 8 }}>Nueva Reserva</Text>
+          <Text style={{ color: theme.colors.disabled }}>Completa los detalles de tu reserva</Text>
+        </Card.Content>
+      </Card>
 
-      <Text style={styles.label}>Fecha</Text>
-      <TextInput style={styles.input} value={date} onChangeText={setDate} />
+      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+        <Card.Content>
+          <Text style={[styles.label, { color: theme.colors.text }]}>Departamento</Text>
+          <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>
+            <Picker selectedValue={dept} onValueChange={(v) => setDept(v)}>
+              {(departments || []).map((d) => (
+                <Picker.Item key={d.id} label={`${d.name}`} value={d.id} />
+              ))}
+            </Picker>
+          </View>
 
-      <Text style={styles.label}>Hora</Text>
-      <TextInput style={styles.input} value={time} onChangeText={setTime} />
+          <Text style={[styles.label, { color: theme.colors.text, marginTop: 16 }]}>Fecha (YYYY-MM-DD)</Text>
+          <TextInput style={[styles.input, { borderColor: theme.colors.outline }]} value={date} onChangeText={setDate} placeholder="2025-12-20" />
 
-      <Text style={styles.label}>Duración</Text>
-      <TextInput style={styles.input} value={duration} onChangeText={setDuration} />
+          <Text style={[styles.label, { color: theme.colors.text, marginTop: 16 }]}>Hora (HH:MM)</Text>
+          <TextInput style={[styles.input, { borderColor: theme.colors.outline }]} value={time} onChangeText={setTime} placeholder="09:00" />
 
-      <Button title="Reservar" onPress={onSubmit} />
-    </View>
+          <Text style={[styles.label, { color: theme.colors.text, marginTop: 16 }]}>Duración</Text>
+          <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>
+            <Picker selectedValue={duration} onValueChange={setDuration}>
+              <Picker.Item label="1 hora" value="1h" />
+              <Picker.Item label="2 horas" value="2h" />
+              <Picker.Item label="3 horas" value="3h" />
+              <Picker.Item label="4 horas" value="4h" />
+              <Picker.Item label="1 día" value="1d" />
+              <Picker.Item label="2 días" value="2d" />
+              <Picker.Item label="1 semana" value="1w" />
+            </Picker>
+          </View>
+        </Card.Content>
+      </Card>
+
+      <View style={styles.buttonGroup}>
+        <Button mode="outlined" onPress={() => navigation.goBack()} style={{ flex: 1, marginRight: 8 }}>
+          Volver
+        </Button>
+        <Button mode="contained" onPress={onSubmit} style={{ flex: 1 }}>
+          Ir al pago
+        </Button>
+      </View>
+      <View style={{ height: 20 }} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: '#fff' },
-  header: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
-  label: { marginTop: 8, marginBottom: 4, color: '#333' },
-  input: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, padding: 10, marginBottom: 8 },
-  picker: { backgroundColor: '#fff', marginBottom: 8 },
+  container: { flex: 1, padding: 16 },
+  headerCard: { marginBottom: 16, borderRadius: 12 },
+  card: { marginBottom: 16, borderRadius: 12 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8 },
+  input: { borderWidth: 1, borderRadius: 8, padding: 12, marginBottom: 8 },
+  pickerWrapper: { borderWidth: 1, borderRadius: 8, overflow: 'hidden', marginBottom: 8 },
+  buttonGroup: { flexDirection: 'row', gap: 12 },
 });

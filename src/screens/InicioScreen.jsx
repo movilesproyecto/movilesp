@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, Image } from 'react-native';
+import { View, StyleSheet, FlatList, Image, ScrollView, Dimensions, StatusBar } from 'react-native';
 import { Card, Text, Button, useTheme } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 import { useNavigation } from '@react-navigation/native';
@@ -8,6 +8,7 @@ export default function InicioScreen() {
   const { user, departments, reservations, canCreateDepartment } = useAppContext();
   const navigation = useNavigation();
   const theme = useTheme();
+  const screenWidth = Dimensions.get('window').width;
 
   const summary = {
     departments: departments.length,
@@ -28,87 +29,241 @@ export default function InicioScreen() {
   );
 
   return (
-    <View style={[styles.screen, { backgroundColor: theme.colors.background }] }>
-      <View style={styles.header}>
-        <Text variant="headlineMedium" style={styles.greeting}>¡Hola, {user?.nombre || 'Invitado'}!</Text>
-        <Text style={[styles.sub, { color: theme.colors.disabled }]}>Panel de administración de departamentos</Text>
+    <ScrollView style={[styles.screen, { backgroundColor: theme.colors.background }]}>
+      {/* Header mejorado */}
+      <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
+        <View>
+          <Text style={[styles.greeting, { color: '#FFFFFF' }]}>¡Hola, {user?.nombre || 'Invitado'}! 👋</Text>
+          <Text style={[styles.sub, { color: 'rgba(255,255,255,0.8)' }]}>Bienvenido a DeptBook</Text>
+        </View>
       </View>
 
-      <View style={styles.statsRow}>
-        <Card style={[styles.statCard, { backgroundColor: theme.colors.surface }] }>
+      {/* Stats Cards - Mejorado */}
+      <View style={[styles.statsContainer, { paddingHorizontal: 16, marginVertical: 16 }]}>
+        <Card style={[styles.statCard, { backgroundColor: theme.colors.surface, borderLeftColor: theme.colors.primary, borderLeftWidth: 4 }]}>
           <Card.Content>
-            <Text style={styles.statNumber}>{summary.departments}</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.disabled }]}>Departamentos</Text>
+            <Text style={[styles.statNumber, { color: theme.colors.primary }]}>{summary.departments}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.placeholder }]}>Departamentos</Text>
           </Card.Content>
         </Card>
-        <Card style={[styles.statCard, { backgroundColor: theme.colors.surface }] }>
+        <Card style={[styles.statCard, { backgroundColor: theme.colors.surface, borderLeftColor: theme.colors.secondary, borderLeftWidth: 4 }]}>
           <Card.Content>
-            <Text style={styles.statNumber}>{summary.activeReservations}</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.disabled }]}>Reservas activas</Text>
+            <Text style={[styles.statNumber, { color: theme.colors.secondary }]}>{summary.activeReservations}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.placeholder }]}>Reservas activas</Text>
           </Card.Content>
         </Card>
-        <Card style={[styles.statCard, { backgroundColor: theme.colors.surface }] }>
+        <Card style={[styles.statCard, { backgroundColor: theme.colors.surface, borderLeftColor: theme.colors.tertiary, borderLeftWidth: 4 }]}>
           <Card.Content>
-            <Text style={styles.statNumber}>{summary.availableRooms}</Text>
-            <Text style={[styles.statLabel, { color: theme.colors.disabled }]}>Recursos disponibles</Text>
+            <Text style={[styles.statNumber, { color: theme.colors.tertiary }]}>{summary.availableRooms}</Text>
+            <Text style={[styles.statLabel, { color: theme.colors.placeholder }]}>Disponibles</Text>
           </Card.Content>
         </Card>
       </View>
 
-      <View style={styles.actionsRow}>
-        <Button mode="contained" onPress={() => navigation.navigate('Departamentos')} style={styles.actionBtn}>Ver Departamentos</Button>
-        <Button mode="outlined" onPress={() => navigation.navigate('Departamentos', { screen: 'ReservationForm' })} style={styles.actionBtn}>Nueva Reserva</Button>
+      {/* Quick Actions */}
+      <View style={[styles.actionsRow, { paddingHorizontal: 16, gap: 10 }]}>
+        <Button 
+          mode="contained" 
+          onPress={() => navigation.navigate('Departamentos')} 
+          style={[styles.actionBtn, { flex: 1 }]}
+          contentStyle={styles.actionBtnContent}
+        >
+          📍 Ver Departamentos
+        </Button>
+        <Button 
+          mode="outlined" 
+          onPress={() => navigation.navigate('Departamentos', { screen: 'ReservationForm' })} 
+          style={[styles.actionBtn, { flex: 1 }]}
+          contentStyle={styles.actionBtnContent}
+        >
+          📅 Nueva Reserva
+        </Button>
       </View>
 
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Departamentos destacados</Text>
-        <FlatList
-          data={featured}
-          keyExtractor={(i) => i.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          renderItem={({ item }) => (
-            <Card style={[styles.deptCard, { backgroundColor: theme.colors.surface }]}>
-              {item.images && item.images[0] ? <Card.Cover source={{ uri: item.images[0] }} style={{ height: 120 }} /> : null}
-              <Card.Content>
-                <Text style={styles.upTitle}>{item.name}</Text>
-                <Text style={[styles.upMeta, { color: theme.colors.disabled }]}>{item.bedrooms} hab · ${item.pricePerNight}/noche · ⭐ {item.rating || '—'}</Text>
-              </Card.Content>
-              <Card.Actions>
-                <Button onPress={() => navigation.navigate('Departamentos', { screen: 'DepartmentDetail', params: { id: item.id } })}>Ver detalles</Button>
-              </Card.Actions>
-            </Card>
-          )}
-        />
+      {/* Featured Section */}
+      <View style={{ paddingHorizontal: 16, marginTop: 12 }}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>✨ Destacados</Text>
+        <View style={styles.gridContainer}>
+          {featured.map((item) => (
+            <View key={item.id} style={[styles.gridItem, { width: screenWidth > 600 ? '48%' : '100%' }]}>
+              <Card style={[styles.deptCard, { backgroundColor: theme.colors.surface }]}>
+                {item.images && item.images[0] ? (
+                  <Card.Cover source={{ uri: item.images[0] }} style={{ height: 150 }} />
+                ) : (
+                  <View style={[styles.placeholderImg, { backgroundColor: theme.colors.surfaceVariant }]} />
+                )}
+                <Card.Content style={{ paddingVertical: 12 }}>
+                  <Text style={[styles.upTitle, { color: theme.colors.text }]} numberOfLines={2}>{item.name}</Text>
+                  <Text style={[styles.upMeta, { color: theme.colors.placeholder, marginBottom: 6 }]} numberOfLines={1}>
+                    🛏️ {item.bedrooms} hab · 💰 ${item.pricePerNight}
+                  </Text>
+                  {item.rating && (
+                    <View style={styles.ratingContainer}>
+                      <Text style={[styles.ratingText, { color: '#FBBF24', fontWeight: '700' }]}>
+                        ⭐ {item.rating}
+                      </Text>
+                    </View>
+                  )}
+                </Card.Content>
+                <Card.Actions>
+                  <Button 
+                    mode="text" 
+                    compact 
+                    onPress={() => navigation.navigate('Departamentos', { screen: 'DepartmentDetail', params: { department: item } })}
+                    style={{ flex: 1 }}
+                  >
+                    Ver detalles
+                  </Button>
+                </Card.Actions>
+              </Card>
+            </View>
+          ))}
+        </View>
+      </View>
 
-        {canCreateDepartment(user) && (
-          <Button mode="contained" onPress={() => navigation.navigate('Departamentos', { screen: 'DepartmentForm' })} style={{ marginTop: 12 }}>
-            Crear departamento
+      {/* Próximas Reservas */}
+      {canCreateDepartment(user) && (
+        <View style={{ paddingHorizontal: 16, marginTop: 16 }}>
+          <Button 
+            mode="contained" 
+            onPress={() => navigation.navigate('Departamentos', { screen: 'DepartmentForm' })} 
+            style={{ borderRadius: 8 }}
+          >
+            ➕ Crear Departamento
           </Button>
-        )}
+        </View>
+      )}
 
-        <Text style={[styles.sectionTitle, { color: theme.colors.text, marginTop: 12 }]}>Próximas reservas</Text>
-        <FlatList data={upcoming} renderItem={renderUpcoming} keyExtractor={(i) => i.id} horizontal={false} />
+      <View style={{ paddingHorizontal: 16, marginTop: 20, marginBottom: 20 }}>
+        <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>📅 Próximas Reservas</Text>
+        {upcoming.length > 0 ? (
+          upcoming.map((item) => (
+            <Card key={item.id} style={[styles.upCard, { backgroundColor: theme.colors.surface }]}>
+              <Card.Content>
+                <Text style={[styles.upTitle, { color: theme.colors.text }]}>{item.title}</Text>
+                <Text style={[styles.upMeta, { color: theme.colors.placeholder }]}>🏢 {item.dept}</Text>
+                <Text style={[styles.upMeta, { color: theme.colors.primary, fontWeight: '600' }]}>📅 {item.date} · ⏰ {item.time}</Text>
+              </Card.Content>
+            </Card>
+          ))
+        ) : (
+          <Card style={[styles.upCard, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content>
+              <Text style={[{ color: theme.colors.placeholder, fontStyle: 'italic' }]}>No hay reservas próximas</Text>
+            </Card.Content>
+          </Card>
+        )}
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, padding: 16 },
-  header: { marginBottom: 12 },
-  greeting: { fontWeight: '700' },
-  sub: { marginTop: 4 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 12 },
-  statCard: { flex: 1, marginHorizontal: 4, paddingVertical: 10, borderRadius: 10 },
-  statNumber: { fontSize: 22, fontWeight: '700' },
-  statLabel: { marginTop: 4 },
-  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 12 },
-  actionBtn: { flex: 1, marginHorizontal: 6 },
-  section: { marginTop: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
-  upCard: { marginBottom: 8, borderRadius: 8 },
-  upTitle: { fontWeight: '600' },
-  upMeta: { marginTop: 4 },
-  deptCard: { width: 260, marginRight: 12, borderRadius: 8 },
+  screen: { 
+    flex: 1,
+  },
+  header: { 
+    backgroundColor: 'inherit',
+    marginBottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 16 : 20,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  greeting: { 
+    fontWeight: '700',
+    fontSize: 24,
+  },
+  sub: { 
+    marginTop: 4,
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  statsContainer: {
+    gap: 10,
+  },
+  statCard: { 
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+  },
+  statNumber: { 
+    fontSize: 22, 
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  statLabel: { 
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  actionsRow: { 
+    gap: 10,
+  },
+  actionBtn: { 
+    borderRadius: 8,
+  },
+  actionBtnContent: {
+    paddingVertical: 8,
+  },
+  section: { 
+    marginTop: 12,
+    paddingHorizontal: 16,
+  },
+  sectionTitle: { 
+    fontSize: 18, 
+    fontWeight: '700', 
+    marginBottom: 12,
+  },
+  gridContainer: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap', 
+    gap: 10,
+  },
+  gridItem: { 
+    marginBottom: 8,
+  },
+  placeholderImg: {
+    height: 150,
+  },
+  ratingContainer: {
+    marginTop: 4,
+  },
+  ratingText: {
+    fontSize: 12,
+  },
+  upCard: { 
+    marginBottom: 10, 
+    borderRadius: 10,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  upTitle: { 
+    fontWeight: '700', 
+    fontSize: 14,
+  },
+  upMeta: { 
+    marginTop: 4, 
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  deptCard: { 
+    borderRadius: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 2,
+  },
 });

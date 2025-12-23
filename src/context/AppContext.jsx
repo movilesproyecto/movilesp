@@ -11,6 +11,9 @@ const AppContext = createContext();
 export function AppProvider({ children }) {
     const [user, setUser] = useState(null);
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [recentSearches, setRecentSearches] = useState([]);
+    const [selectedDepts, setSelectedDepts] = useState([]);
+    const [userRatings, setUserRatings] = useState({});
     const [registeredUsers, setRegisteredUsers] = useState([
         {
             nombre: 'johan palma',
@@ -38,14 +41,55 @@ export function AppProvider({ children }) {
         },
     ]);
     const [departments, setDepartments] = useState([
-        { id: '1', name: 'Departamento Centro - A1', address: 'Av. Central 123, Centro', bedrooms: 2, pricePerNight: 45, rating: 4.5, description: 'Acogedor departamento céntrico, ideal para estancias cortas.', amenities: ['WiFi','Cocina','A/C'], images: ['https://images.unsplash.com/photo-1560448071-5bf0a9f7cf0a?w=1200&q=80','https://images.unsplash.com/photo-1560448204-0b9a7a2f6d6a?w=1200&q=80'] },
-        { id: '2', name: 'Loft Moderno - B2', address: 'Calle 9 No. 45, Barrio Moderno', bedrooms: 1, pricePerNight: 60, rating: 4.8, description: 'Loft con diseño moderno y vista a la ciudad.', amenities: ['WiFi','TV','Lavadora'], images: ['https://images.unsplash.com/photo-1554995207-c18c203602cb?w=1200&q=80','https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=1200&q=80'] },
-        { id: '3', name: 'Casa Familiar - C3', address: 'Sector Norte 77, Zona Residencial', bedrooms: 3, pricePerNight: 80, rating: 4.2, description: 'Amplia casa ideal para familias, con jardín.', amenities: ['Cocina','Estacionamiento','Jardín'], images: ['https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=1200&q=80','https://images.unsplash.com/photo-1505691723518-36a0b8d4a1f5?w=1200&q=80'] },
+        { id: '1', name: 'Departamento Centro - A1', address: 'Av. Central 123, Centro', bedrooms: 2, pricePerNight: 45, rating: 4.5, description: 'Acogedor departamento céntrico, ideal para estancias cortas.', amenities: ['WiFi','Cocina','A/C'], images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80','https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80'] },
+        { id: '2', name: 'Loft Moderno - B2', address: 'Calle 9 No. 45, Barrio Moderno', bedrooms: 1, pricePerNight: 60, rating: 4.8, description: 'Loft con diseño moderno y vista a la ciudad.', amenities: ['WiFi','TV','Lavadora'], images: ['https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=1200&q=80','https://images.unsplash.com/photo-1513161455079-7ef1a827e926?w=1200&q=80'] },
+        { id: '3', name: 'Casa Familiar - C3', address: 'Sector Norte 77, Zona Residencial', bedrooms: 3, pricePerNight: 80, rating: 4.2, description: 'Amplia casa ideal para familias, con jardín.', amenities: ['Cocina','Estacionamiento','Jardín'], images: ['https://images.unsplash.com/photo-1570129477492-45a003537e1f?w=1200&q=80','https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80'] },
+        { id: '4', name: 'Suite Ejecutiva - D4', address: 'Torre Premium, Av. Reforma 500', bedrooms: 2, pricePerNight: 120, rating: 4.9, description: 'Lujo y comodidad en el corazón financiero de la ciudad.', amenities: ['WiFi','Gym','Piscina','Room Service'], images: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1200&q=80'] },
+        { id: '5', name: 'Cabaña Campestre - E5', address: 'Km 15 Vía al Valle, Zona Rural', bedrooms: 4, pricePerNight: 75, rating: 4.6, description: 'Desconéctate en plena naturaleza con todas las comodidades.', amenities: ['Chimenea','Parque','BBQ','Piscina Natural'], images: ['https://images.unsplash.com/photo-1510798831971-661eb04cbb35?w=1200&q=80'] },
+        { id: '6', name: 'Apartamento Minimalista - F6', address: 'Barrio Artístico, Calle Cultura 88', bedrooms: 1, pricePerNight: 50, rating: 4.4, description: 'Diseño contemporáneo en zona bohemia ideal para viajeros.', amenities: ['WiFi','Cocina Moderna','A/C','Espacio Trabajo'], images: ['https://images.unsplash.com/photo-1493857671505-72967e2e2760?w=1200&q=80'] },
+        { id: '7', name: 'Penthouse Lujo - G7', address: 'Piso 45, Edificio Sky, Centro', bedrooms: 3, pricePerNight: 200, rating: 4.95, description: 'Vistas panorámicas de la ciudad desde tu hogar temporal.', amenities: ['WiFi','Terraza','Jacuzzi','Bar Privado'], images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80'] },
+        { id: '8', name: 'Estudio Cerca a Universidad - H8', address: 'Barrio Universitario, Calle Principal 45', bedrooms: 0, pricePerNight: 35, rating: 4.3, description: 'Perfecto para estudiantes, próximo a campus.', amenities: ['WiFi','Cocina','Lavadora','Seguridad'], images: ['https://images.unsplash.com/photo-1554992528-8168e04dffef?w=1200&q=80'] },
+        { id: '9', name: 'Villa Tropical - I9', address: 'Costa Verde, Calle del Mar 200', bedrooms: 5, pricePerNight: 150, rating: 4.7, description: 'Paraíso para familias grandes con acceso a playa.', amenities: ['Piscina','Playa Privada','Jardín','Terraza'], images: ['https://images.unsplash.com/photo-1589922582435-891a5794de5c?w=1200&q=80'] },
+        { id: '10', name: 'Loft Industrial - J10', address: 'Zona de Lofts, Calle Fábrica 77', bedrooms: 2, pricePerNight: 65, rating: 4.6, description: 'Estilo industrial con toque moderno, espacio abierto.', amenities: ['WiFi','Cocina Abierta','Aire Acondicionado','Patio'], images: ['https://images.unsplash.com/photo-1549908536-5f45ffe686e4?w=1200&q=80'] },
+    ]);
+
+    const [favorites, setFavorites] = useState(['2', '4', '7', '9']);
+
+    const [promotions, setPromotions] = useState([
+        { id: 'p1', title: '🎉 Descuento Fin de Año', description: '20% de descuento en todas las reservas', discount: 20, code: 'YEAR20', startDate: '2025-12-01', endDate: '2025-12-31', active: true, applicableDepts: ['1', '2', '3'] },
+        { id: 'p2', title: '💰 Estancia Prolongada', description: '15% descuento por 7+ noches', discount: 15, code: 'LONG7', startDate: '2025-12-01', endDate: '2025-12-31', active: true, applicableDepts: ['1', '2', '3'] },
+        { id: 'p3', title: '👥 Grupos Grandes', description: '25% descuento para 4+ personas', discount: 25, code: 'GROUP25', startDate: '2025-12-01', endDate: '2025-12-31', active: true, applicableDepts: ['2', '3'] },
+        { id: 'p4', title: '🏖️ Promoción Especial Centro', description: '10% en el departamento Centro', discount: 10, code: 'CENTER10', startDate: '2025-12-15', endDate: '2025-12-25', active: true, applicableDepts: ['1'] },
     ]);
 
     const [reservations, setReservations] = useState([
-        { id: 'r1', deptId: '1', date: '2025-12-15', time: '10:00', duration: '1h', user: 'johan11gamerez@gmail.com', status: 'confirmed' },
+        { id: 'r1', deptId: '1', date: '2025-12-15', time: '10:00', duration: '1h', user: 'johan11gamerez@gmail.com', status: 'confirmed', amount: 45 },
     ]);
+
+    // Ganancias mensuales y estadísticas (solo para SuperAdmin)
+    const [monthlyEarnings, setMonthlyEarnings] = useState([
+        { month: 'Enero', earnings: 2450, reservations: 12, occupancy: 75 },
+        { month: 'Febrero', earnings: 2800, reservations: 14, occupancy: 82 },
+        { month: 'Marzo', earnings: 3100, reservations: 16, occupancy: 85 },
+        { month: 'Abril', earnings: 2900, reservations: 15, occupancy: 80 },
+        { month: 'Mayo', earnings: 3400, reservations: 18, occupancy: 90 },
+        { month: 'Junio', earnings: 3200, reservations: 17, occupancy: 88 },
+        { month: 'Julio', earnings: 3600, reservations: 19, occupancy: 92 },
+        { month: 'Agosto', earnings: 3500, reservations: 18, occupancy: 91 },
+        { month: 'Septiembre', earnings: 3100, reservations: 16, occupancy: 85 },
+        { month: 'Octubre', earnings: 3300, reservations: 17, occupancy: 89 },
+        { month: 'Noviembre', earnings: 3150, reservations: 16, occupancy: 86 },
+        { month: 'Diciembre', earnings: 2450, reservations: 12, occupancy: 75 },
+    ]);
+
+    // Estadísticas globales del sistema
+    const [systemStats, setSystemStats] = useState({
+        totalUsers: 0,
+        activeReservations: 0,
+        totalDepartments: 0,
+        averageRating: 0,
+        totalEarningsCurrentYear: 0,
+    });
 
     // Registrar un nuevo usuario
     const register = (nombre, correo, password, extras = {}) => {
@@ -137,7 +181,7 @@ export function AppProvider({ children }) {
     const isAdmin = (userObj) => hasRole(userObj, Roles.ADMIN);
     const isSuperAdmin = (userObj) => hasRole(userObj, Roles.SUPERADMIN);
 
-    // Permissions map: define capabilities per role
+    // Permissions map: define capabilities por role
     const permissions = {
         [Roles.USER]: {
             createDepartment: false,
@@ -149,6 +193,7 @@ export function AppProvider({ children }) {
             manageReservations: false,
             manageUsers: false,
             viewReports: false,
+            viewSuperAdminStats: false,
         },
         [Roles.ADMIN]: {
             createDepartment: true,
@@ -160,6 +205,7 @@ export function AppProvider({ children }) {
             manageReservations: true,
             manageUsers: true,
             viewReports: true,
+            viewSuperAdminStats: false,
         },
         [Roles.SUPERADMIN]: {
             createDepartment: true,
@@ -171,6 +217,7 @@ export function AppProvider({ children }) {
             manageReservations: true,
             manageUsers: true,
             viewReports: true,
+            viewSuperAdminStats: true,
         },
     };
 
@@ -192,6 +239,7 @@ export function AppProvider({ children }) {
     const canManageUsers = (userObj) => canPerform(userObj, 'manageUsers');
     const canViewReports = (userObj) => canPerform(userObj, 'viewReports');
     const canApproveReservation = (userObj) => canPerform(userObj, 'manageReservations');
+    const canViewSuperAdminStats = (userObj) => canPerform(userObj, 'viewSuperAdminStats');
 
     // Friendly label for roles
     const roleLabel = (roleOrUser) => {
@@ -242,13 +290,32 @@ export function AppProvider({ children }) {
         return { success: true };
     };
 
-    const createReservation = ({ deptId, date, time, duration }) => {
+    const createReservation = ({ deptId, date, time, duration, paymentMethod, status = 'pending' }) => {
         if (!canCreateReservation(user)) return { success: false, message: 'No tienes permisos para crear reservas.' };
         const id = `r${reservations.length + 1}`;
-        const newRes = { id, deptId, date, time, duration, user: user?.correo || 'anon', status: 'pending' };
+        
+        // Obtener el departamento para el precio
+        const dept = departments.find(d => d.id === deptId);
+        const amount = dept?.pricePerNight || 0;
+        
+        const newRes = { 
+            id, 
+            deptId, 
+            date, 
+            time, 
+            duration, 
+            user: user?.correo || 'anon', 
+            status: status,
+            paymentMethod: paymentMethod || null,
+            amount: amount,
+            paymentDate: paymentMethod ? new Date().toISOString().split('T')[0] : null,
+        };
         setReservations((r) => [...r, newRes]);
         // show snackbar if available
-        if (typeof showSnackbar === 'function') showSnackbar('Reserva creada y en espera de aprobación');
+        const message = paymentMethod 
+            ? `Reserva confirmada. Pago procesado con ${paymentMethod}`
+            : 'Reserva creada y en espera de aprobación';
+        if (typeof showSnackbar === 'function') showSnackbar(message);
         return { success: true, data: newRes };
     };
 
@@ -348,6 +415,80 @@ export function AppProvider({ children }) {
     };
 
 
+    // Búsquedas recientes
+    const addRecentSearch = (query) => {
+        if (!query.trim()) return;
+        const updated = [query, ...recentSearches.filter(s => s !== query)].slice(0, 5);
+        setRecentSearches(updated);
+    };
+
+    const clearRecentSearches = () => setRecentSearches([]);
+
+    // Comparador de departamentos
+    const toggleDeptComparison = (deptId) => {
+        if (selectedDepts.includes(deptId)) {
+            setSelectedDepts(selectedDepts.filter(id => id !== deptId));
+        } else if (selectedDepts.length < 3) {
+            setSelectedDepts([...selectedDepts, deptId]);
+        }
+    };
+
+    const clearComparison = () => setSelectedDepts([]);
+
+    // Sistema de ratings
+    const setUserRating = (deptId, rating) => {
+        setUserRatings(prev => ({
+            ...prev,
+            [deptId]: rating
+        }));
+    };
+
+    const getUserRating = (deptId) => userRatings[deptId] || 0;
+
+    // Funciones para Promociones
+    const addPromotion = (promotion) => {
+        const newPromotion = {
+            id: 'p' + Date.now(),
+            ...promotion,
+            active: true
+        };
+        setPromotions([...promotions, newPromotion]);
+        return newPromotion;
+    };
+
+    const updatePromotion = (id, updatedData) => {
+        setPromotions(promotions.map(p => p.id === id ? { ...p, ...updatedData } : p));
+    };
+
+    const deletePromotion = (id) => {
+        setPromotions(promotions.filter(p => p.id !== id));
+    };
+
+    const togglePromotionStatus = (id) => {
+        setPromotions(promotions.map(p => p.id === id ? { ...p, active: !p.active } : p));
+    };
+
+    const getActivePromotions = () => promotions.filter(p => p.active);
+
+    const getPromotionsByDept = (deptId) => {
+        return promotions.filter(p => p.active && p.applicableDepts.includes(deptId));
+    };
+
+    // Funciones para Favoritos
+    const toggleFavorite = (deptId) => {
+        if (favorites.includes(deptId)) {
+            setFavorites(favorites.filter(id => id !== deptId));
+        } else {
+            setFavorites([...favorites, deptId]);
+        }
+    };
+
+    const isFavorite = (deptId) => favorites.includes(deptId);
+
+    const getFavoriteDepartments = () => {
+        return departments.filter(d => favorites.includes(d.id));
+    };
+
     return (
         <AppContext.Provider
             value={{
@@ -381,10 +522,13 @@ export function AppProvider({ children }) {
                 canManageUsers,
                 canViewReports,
                 canApproveReservation,
+                canViewSuperAdminStats,
                 approveReservation,
                 rejectReservation,
                 departments,
                 reservations,
+                monthlyEarnings,
+                systemStats,
                 snackbarVisible,
                 snackbarMessage,
                 showSnackbar,
@@ -395,6 +539,28 @@ export function AppProvider({ children }) {
                 removeUser,
                 changeUserRole,
                 updateUserProfile,
+                recentSearches,
+                addRecentSearch,
+                clearRecentSearches,
+                selectedDepts,
+                toggleDeptComparison,
+                clearComparison,
+                userRatings,
+                setUserRating,
+                getUserRating,
+                promotions,
+                setPromotions,
+                addPromotion,
+                updatePromotion,
+                deletePromotion,
+                togglePromotionStatus,
+                getActivePromotions,
+                getPromotionsByDept,
+                favorites,
+                setFavorites,
+                toggleFavorite,
+                isFavorite,
+                getFavoriteDepartments,
             }}
         >
             {children}
