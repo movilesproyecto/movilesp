@@ -10,9 +10,9 @@ export const PaperTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#2563EB', // Bright Blue
-    secondary: '#7C3AED', // Purple
-    tertiary: '#10B981', // Emerald
+    primary: '#334155', 
+    secondary: '#64748B', 
+    tertiary: '#0F172A', 
     background: '#F8FAFC',
     surface: '#FFFFFF',
     text: '#0F172A',
@@ -25,8 +25,8 @@ export const PaperLightTheme = {
   colors: {
     ...DefaultLightTheme.colors,
     // Primary Colors
-    primary: '#1D4ED8', // Deep Blue (better contrast)
-    secondary: '#6D28D9', // Deep Purple (better contrast)
+    primary: '#334155', // Deep Blue (better contrast)
+    secondary: '#475569', // Deep Purple (better contrast)
     tertiary: '#059669', // Deep Emerald (better contrast)
     
     // Backgrounds
@@ -34,22 +34,22 @@ export const PaperLightTheme = {
     surface: '#F8FAFC', // Light gray for cards
     
     // Text Colors
-    text: '#111827', // Darker text
-    onSurface: '#111827',
-    placeholder: '#6B7280',
+    text: '#1E293B', // Darker text
+    onSurface: '#1E293B',
+    placeholder: '#94A3B8',
     
     // Status Colors
     success: '#059669',
     warning: '#D97706',
-    error: '#DC2626',
-    info: '#2563EB',
+    error: '#E11D48',
+    info: '#334155',
     
     // Custom colors
-    topBar: '#1D4ED8', // Deep Blue
+    topBar: '#334155', // Deep Blue
     onTopBar: '#FFFFFF',
-    snackbar: '#6D28D9', // Deep Purple
+    snackbar: '#1E293B', // Deep Purple
     onSnackbar: '#FFFFFF',
-    accent: '#DB2777', // Pink accent
+    accent: '#64748B', // Pink accent
     
     // Surface variants
     surfaceVariant: '#F3F4F6',
@@ -66,7 +66,7 @@ export const PaperDarkTheme = {
   colors: {
     ...DefaultDarkTheme.colors,
     // Primary Colors
-    primary: '#3B82F6', // Bright Blue (more visible)
+    primary: '#94A3B8', // Bright Blue (more visible)
     secondary: '#A78BFA', // Light Purple
     tertiary: '#34D399', // Light Emerald
     
