@@ -79,7 +79,7 @@ export default function PerfilScreen() {
           <Button 
             mode="contained-tonal" 
             size="small" 
-            onPress={() => navigation.navigate('ConfiguracionMain', { screen: 'EditProfile' })}
+            onPress={() => navigation.navigate('EditProfile')}
             style={{ flex: 1, borderRadius: 8 }}
             buttonColor='rgba(255,255,255,0.3)'
             labelStyle={{ color: '#FFFFFF' }}
@@ -211,24 +211,6 @@ export default function PerfilScreen() {
               onPress={() => navigation.navigate('Departamentos', { screen: 'Reservations' })}
               theme={theme}
             />
-            <QuickAccessButton
-              label="Editar Perfil"
-              icon="edit"
-              onPress={() => navigation.navigate('ConfiguracionMain', { screen: 'EditProfile' })}
-              theme={theme}
-            />
-            <QuickAccessButton
-              label="Seguridad"
-              icon="lock"
-              onPress={() => navigation.navigate('Configuracion')}
-              theme={theme}
-            />
-            <QuickAccessButton
-              label="Ayuda"
-              icon="question-circle"
-              onPress={() => { /* help */ }}
-              theme={theme}
-            />
           </View>
         </Card.Content>
       </Card>
@@ -252,7 +234,7 @@ export default function PerfilScreen() {
         <Card.Title title="Más" />
         <Divider />
         <Card.Content>
-          <Button mode="text" onPress={() => navigation.navigate('Configuracion')} style={{ marginVertical: 4 }}>
+          <Button mode="text" onPress={() => navigation.navigate('ConfigScreen')} style={{ marginVertical: 4 }}>
             Configuración avanzada
           </Button>
           <Button mode="text" onPress={() => { logout(); navigation.reset({ index: 0, routes: [{ name: 'Login' }] }); }} labelStyle={{ color: 'red' }} style={{ marginVertical: 4 }}>

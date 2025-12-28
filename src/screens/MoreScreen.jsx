@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   ScrollView,
@@ -7,7 +7,11 @@ import {
   Alert,
   Switch,
   StatusBar,
+  Share,
+  Linking,
+  Platform,
 } from 'react-native';
+import { CommonActions } from '@react-navigation/native';
 import {
   Card,
   Text,
@@ -16,6 +20,8 @@ import {
   Divider,
   Avatar,
   Badge,
+  Modal,
+  Portal,
 } from 'react-native-paper';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAppContext } from '../context/AppContext';
@@ -23,7 +29,45 @@ import { useAppContext } from '../context/AppContext';
 const MoreScreen = ({ navigation }) => {
   const theme = useTheme();
   const { user, logout, isDarkTheme, setIsDarkMode, isSuperAdmin, isAdmin } = useAppContext();
+  const [aboutVisible, setAboutVisible] = useState(false);
   const styles = useMemo(() => createStyles(theme), [theme]);
+
+  // Funciones para las opciones
+  const handleRateApp = async () => {
+    try {
+      const url = Platform.select({
+        ios: 'itms-apps://apps.apple.com/app/id6479831622',
+        android: 'https://play.google.com/store/apps/details?id=com.app.departamentos',
+        web: 'https://www.google.com/search?q=app+departamentos',
+      }) || 'https://www.google.com/search?q=app+departamentos';
+      
+      await Linking.openURL(url);
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo abrir la tienda de aplicaciones. Intenta manualmente desde tu tienda de apps.');
+    }
+  };
+
+  const handleShareApp = async () => {
+    try {
+      const message = Platform.select({
+        ios: 'Descubre nuestra app de gestión de departamentos: https://apps.apple.com/app/id1234567890',
+        android: 'Descubre nuestra app de gestión de departamentos: https://play.google.com/store/apps/details?id=com.moviles.departamentos',
+      });
+      
+      await Share.share({
+        message: message || 'Descubre nuestra app de gestión de departamentos',
+        title: 'Compartir Aplicación',
+        url: 'https://apps.apple.com/app/id1234567890',
+      });
+    } catch (error) {
+      Alert.alert('Error', 'No se pudo compartir la aplicación');
+    }
+  };
+
+  const handleAboutPress = () => {
+    setAboutVisible(true);
+  };
+
 
   const menuOptions = [
     {
@@ -56,7 +100,7 @@ const MoreScreen = ({ navigation }) => {
       title: 'Califica la App',
       subtitle: 'Danos tu opinión',
       color: '#FFA502',
-      action: () => Alert.alert('Gracias', 'Tu opinión es importante para nosotros'),
+      action: handleRateApp,
     },
     {
       id: 5,
@@ -64,7 +108,7 @@ const MoreScreen = ({ navigation }) => {
       title: 'Compartir',
       subtitle: 'Invita a tus amigos',
       color: '#95E1D3',
-      action: () => Alert.alert('Compartir', 'Comparte la app con tus amigos'),
+      action: handleShareApp,
     },
     {
       id: 6,
@@ -72,7 +116,7 @@ const MoreScreen = ({ navigation }) => {
       title: 'Acerca de',
       subtitle: 'Versión 1.0.0',
       color: '#8E7CC3',
-      action: () => Alert.alert('Acerca de', 'Aplicación de Gestión de Departamentos v1.0.0'),
+      action: handleAboutPress,
     },
   ];
 
@@ -107,27 +151,6 @@ const MoreScreen = ({ navigation }) => {
       action: () => navigation.navigate('AdminDashboard'),
     });
   }
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro de que deseas cerrar sesión?',
-      [
-        { text: 'Cancelar', onPress: () => {}, style: 'cancel' },
-        {
-          text: 'Cerrar Sesión',
-          onPress: () => {
-            logout();
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          },
-          style: 'destructive',
-        },
-      ]
-    );
-  };
 
   return (
     <View style={styles.container}>
@@ -247,26 +270,6 @@ const MoreScreen = ({ navigation }) => {
         {/* Account Management */}
         <Text style={styles.sectionTitle}>Cuenta</Text>
         <Card style={styles.accountCard}>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('EditProfile')}
-            style={styles.accountItem}
-          >
-            <FontAwesome name="pencil" size={20} color={theme.colors.primary} />
-            <View style={styles.accountContent}>
-              <Text style={styles.accountTitle}>Editar Perfil</Text>
-              <Text style={styles.accountSubtitle}>
-                Actualiza tu información
-              </Text>
-            </View>
-            <FontAwesome
-              name="chevron-right"
-              size={16}
-              color={theme.colors.disabled}
-            />
-          </TouchableOpacity>
-
-          <Divider />
-
           <TouchableOpacity style={styles.accountItem}>
             <FontAwesome name="lock" size={20} color={theme.colors.primary} />
             <View style={styles.accountContent}>
@@ -279,8 +282,6 @@ const MoreScreen = ({ navigation }) => {
               color={theme.colors.disabled}
             />
           </TouchableOpacity>
-
-          <Divider />
 
           <Divider />
 
@@ -300,25 +301,75 @@ const MoreScreen = ({ navigation }) => {
           </View>
         </Card>
 
-        {/* Logout Button */}
-        <Button
-          mode="contained"
-          buttonColor="#FF6B6B"
-          textColor="white"
-          onPress={handleLogout}
-          icon={() => <FontAwesome name="sign-out" size={16} color="white" />}
-          style={styles.logoutBtn}
-          contentStyle={{ paddingVertical: 8 }}
-        >
-          Cerrar Sesión
-        </Button>
-
         {/* App Info */}
         <View style={styles.appInfo}>
           <Text style={styles.appVersion}>Versión 1.0.0</Text>
           <Text style={styles.appCopyright}>© 2024 Todos los derechos reservados</Text>
         </View>
       </ScrollView>
+
+      {/* Modal Acerca de */}
+      <Portal>
+        <Modal
+          visible={aboutVisible}
+          onDismiss={() => setAboutVisible(false)}
+          contentContainerStyle={styles.modalContent}
+        >
+          <View style={[styles.aboutModal, { backgroundColor: theme.colors.surface }]}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setAboutVisible(false)}
+            >
+              <FontAwesome name="times" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+
+            <View style={styles.aboutHeader}>
+              <View style={[styles.aboutIcon, { backgroundColor: theme.colors.primary }]}>
+                <FontAwesome name="building" size={40} color="#fff" />
+              </View>
+              <Text style={styles.aboutTitle}>Gestión de Departamentos</Text>
+              <Text style={styles.aboutVersion}>v1.0.0</Text>
+            </View>
+
+            <Divider style={{ marginVertical: 16 }} />
+
+            <View style={styles.aboutSection}>
+              <Text style={styles.aboutSectionTitle}>Descripción</Text>
+              <Text style={styles.aboutText}>
+                Aplicación móvil para la gestión integral de departamentos, reservas y administración de usuarios.
+              </Text>
+            </View>
+
+            <View style={styles.aboutSection}>
+              <Text style={styles.aboutSectionTitle}>Características</Text>
+              <Text style={styles.aboutText}>
+                • Búsqueda y exploración de departamentos{'\n'}
+                • Sistema de reservas{'\n'}
+                • Gestión de favoritos{'\n'}
+                • Administración de perfil{'\n'}
+                • Notificaciones en tiempo real{'\n'}
+                • Panel de administrador
+              </Text>
+            </View>
+
+            <View style={styles.aboutSection}>
+              <Text style={styles.aboutSectionTitle}>Contacto</Text>
+              <Text style={styles.aboutText}>
+                Email: soporte@departamentos.com{'\n'}
+                Teléfono: +1 (555) 000-0000
+              </Text>
+            </View>
+
+            <Button
+              mode="contained"
+              onPress={() => setAboutVisible(false)}
+              style={{ marginTop: 16 }}
+            >
+              Cerrar
+            </Button>
+          </View>
+        </Modal>
+      </Portal>
     </View>
   );
 };
@@ -550,6 +601,60 @@ const createStyles = (theme) =>
       color: theme.colors.disabled,
       marginTop: 4,
       opacity: 0.7,
+    },
+    modalContent: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      flex: 1,
+      paddingHorizontal: 16,
+    },
+    aboutModal: {
+      borderRadius: 16,
+      padding: 24,
+      maxHeight: '85%',
+      width: '100%',
+      elevation: 5,
+    },
+    closeButton: {
+      alignSelf: 'flex-end',
+      marginBottom: 12,
+    },
+    aboutHeader: {
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    aboutIcon: {
+      width: 70,
+      height: 70,
+      borderRadius: 35,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    aboutTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      textAlign: 'center',
+    },
+    aboutVersion: {
+      fontSize: 14,
+      color: theme.colors.disabled,
+      marginTop: 4,
+    },
+    aboutSection: {
+      marginVertical: 12,
+    },
+    aboutSectionTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: theme.colors.primary,
+      marginBottom: 8,
+    },
+    aboutText: {
+      fontSize: 13,
+      color: theme.colors.text,
+      lineHeight: 20,
     },
   });
 

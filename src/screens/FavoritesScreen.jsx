@@ -99,75 +99,78 @@ const FavoritesScreen = ({ navigation }) => {
               <Card.Content style={styles.departmentsContainer}>
                 {favoriteDepartments.map((dept) => (
                   <View key={dept.id}>
-                    <TouchableOpacity
-                      onPress={() =>
-                        navigation.navigate('DepartmentDetail', {
-                          department: dept,
-                        })
-                      }
-                    >
-                      <View style={styles.departmentItem}>
-                        <View style={styles.deptHeader}>
-                          <Text style={styles.deptName}>{dept.name}</Text>
-                          <View style={styles.ratingBadge}>
-                            <FontAwesome
-                              name="star"
-                              size={12}
-                              color="#FFB800"
-                            />
-                            <Text style={styles.ratingText}>
-                              {dept.rating}
-                            </Text>
+                    <View style={styles.departmentItem}>
+                      <TouchableOpacity
+                        onPress={() =>
+                          navigation.navigate('DepartmentDetail', {
+                            department: dept,
+                          })
+                        }
+                      >
+                        <View>
+                          <View style={styles.deptHeader}>
+                            <Text style={styles.deptName}>{dept.name}</Text>
+                            <View style={styles.ratingBadge}>
+                              <FontAwesome
+                                name="star"
+                                size={12}
+                                color="#FFB800"
+                              />
+                              <Text style={styles.ratingText}>
+                                {dept.rating}
+                              </Text>
+                            </View>
                           </View>
-                        </View>
 
-                        <Text style={styles.location}>
-                          <FontAwesome name="map-marker" /> {dept.address}
-                        </Text>
+                          <Text style={styles.location}>
+                            <FontAwesome name="map-marker" /> {dept.address}
+                          </Text>
 
-                        <View style={styles.deptMeta}>
-                          <Chip
-                            icon="bed"
-                            style={styles.chip}
-                            textStyle={styles.chipText}
-                          >
-                            {dept.bedrooms} hab
-                          </Chip>
-                          <Chip
-                            icon="shower"
-                            style={styles.chip}
-                            textStyle={styles.chipText}
-                          >
-                            {dept.bathrooms || 2} baños
-                          </Chip>
-                        </View>
+                          <View style={styles.deptMeta}>
+                            <Chip
+                              icon="bed"
+                              style={styles.chip}
+                              textStyle={styles.chipText}
+                            >
+                              {dept.bedrooms} hab
+                            </Chip>
+                            <Chip
+                              icon="shower"
+                              style={styles.chip}
+                              textStyle={styles.chipText}
+                            >
+                              {dept.bathrooms || 2} baños
+                            </Chip>
+                          </View>
 
-                        <View style={styles.deptBottom}>
                           <Text style={styles.price}>
                             ${dept.pricePerNight}
                             <Text style={styles.priceUnit}>/noche</Text>
                           </Text>
-                          <Button
-                            mode="contained"
-                            size="small"
-                            onPress={() =>
-                              navigation.navigate('ReservationForm', {
-                                department: dept,
-                              })
-                            }
-                          >
-                            Reservar
-                          </Button>
-                          <TouchableOpacity
-                            onPress={() => toggleFavorite(dept.id)}
-                            style={{ marginLeft: 8 }}
-                          >
-                            <FontAwesome name="trash" size={18} color={theme.colors.error} />
-                          </TouchableOpacity>
                         </View>
-                        <Divider style={{ marginTop: 12 }} />
+                      </TouchableOpacity>
+
+                      <View style={styles.deptBottom}>
+                        <Button
+                          mode="contained"
+                          size="small"
+                          onPress={() =>
+                            navigation.navigate('ReservationForm', {
+                              department: dept,
+                            })
+                          }
+                        >
+                          Reservar
+                        </Button>
+                        <TouchableOpacity
+                          onPress={() => toggleFavorite(dept.id)}
+                          style={{ marginLeft: 8 }}
+                        >
+                          <FontAwesome name="trash" size={18} color={theme.colors.error} />
+                        </TouchableOpacity>
                       </View>
-                    </TouchableOpacity>
+                      <Divider style={{ marginTop: 12 }} />
+                    </View>
                   </View>
                 ))}
               </Card.Content>
@@ -318,6 +321,7 @@ const createStyles = (theme) =>
       justifyContent: 'space-between',
       alignItems: 'center',
       marginTop: 8,
+      gap: 8,
     },
     price: {
       fontSize: 16,

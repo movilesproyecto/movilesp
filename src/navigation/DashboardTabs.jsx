@@ -87,6 +87,33 @@ function ConfigStackScreen() {
   );
 }
 
+const FavoritesStack = createNativeStackNavigator();
+
+function FavoritesStackScreen() {
+  const theme = useTheme();
+  return (
+    <FavoritesStack.Navigator screenOptions={{ headerShown: true, headerStyle: { backgroundColor: theme.colors.topBar }, headerTintColor: theme.colors.onTopBar || theme.colors.text }}>
+      <FavoritesStack.Screen name="FavoritesMain" component={FavoritesScreen} options={{ title: 'Mis Favoritos' }} />
+      <FavoritesStack.Screen name="DepartmentDetail" component={DepartmentDetail} options={{ title: 'Detalles del departamento' }} />
+      <FavoritesStack.Screen name="ReservationForm" component={ReservationForm} options={{ title: 'Nueva Reserva' }} />
+      <FavoritesStack.Screen name="Payment" component={PaymentScreen} options={{ title: 'Método de Pago' }} />
+    </FavoritesStack.Navigator>
+  );
+}
+
+const PerfilStack = createNativeStackNavigator();
+
+function PerfilStackScreen() {
+  const theme = useTheme();
+  return (
+    <PerfilStack.Navigator screenOptions={{ headerShown: true, headerStyle: { backgroundColor: theme.colors.topBar }, headerTintColor: theme.colors.onTopBar || theme.colors.text }}>
+      <PerfilStack.Screen name="PerfilMain" component={PerfilScreen} options={{ title: 'Mi Perfil' }} />
+      <PerfilStack.Screen name="ConfigScreen" component={ConfigScreen} options={{ title: 'Configuración avanzada' }} />
+      <PerfilStack.Screen name="EditProfile" component={EditProfile} options={{ title: 'Editar perfil' }} />
+    </PerfilStack.Navigator>
+  );
+}
+
 const MoreStack = createNativeStackNavigator();
 
 function MoreStackScreen() {
@@ -186,7 +213,7 @@ export default function DashboardTabs() {
       />
       <Tab.Screen 
         name="Favoritos" 
-        component={FavoritesScreen} 
+        component={FavoritesStackScreen} 
         options={{ 
           headerShown: false,
           tabBarLabel: '❤️ Favoritos',
@@ -194,8 +221,9 @@ export default function DashboardTabs() {
       />
       <Tab.Screen 
         name="Perfil" 
-        component={PerfilScreen}
+        component={PerfilStackScreen}
         options={{
+          headerShown: false,
           tabBarLabel: '👤 Perfil',
         }}
       />

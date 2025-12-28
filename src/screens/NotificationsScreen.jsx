@@ -1,9 +1,12 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  Alert,
+  Animated,
+  Dimensions,
 } from 'react-native';
 import {
   Card,
@@ -11,18 +14,16 @@ import {
   useTheme,
   Divider,
   Badge,
+  Button,
+  Chip,
 } from 'react-native-paper';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 const NotificationsScreen = ({ navigation }) => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
-
-  const handleBack = () => {
-    navigation.goBack();
-  };
-
-  const notifications = [
+  
+  const [notificationsData, setNotificationsData] = useState([
     {
       id: 1,
       title: 'Reserva Confirmada',
@@ -31,6 +32,7 @@ const NotificationsScreen = ({ navigation }) => {
       type: 'success',
       icon: 'check-circle',
       read: false,
+      departmentId: 1,
     },
     {
       id: 2,
@@ -40,6 +42,7 @@ const NotificationsScreen = ({ navigation }) => {
       type: 'info',
       icon: 'bell',
       read: false,
+      departmentId: 2,
     },
     {
       id: 3,
@@ -49,6 +52,7 @@ const NotificationsScreen = ({ navigation }) => {
       type: 'success',
       icon: 'check-circle',
       read: true,
+      departmentId: null,
     },
     {
       id: 4,
@@ -58,6 +62,7 @@ const NotificationsScreen = ({ navigation }) => {
       type: 'warning',
       icon: 'exclamation-circle',
       read: true,
+      departmentId: 1,
     },
     {
       id: 5,
@@ -67,10 +72,81 @@ const NotificationsScreen = ({ navigation }) => {
       type: 'info',
       icon: 'star',
       read: true,
+      departmentId: 3,
     },
-  ];
+  ]);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const [filterType, setFilterType] = useState(null);
+
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
+  // Marcar notificación como leída
+  const markAsRead = (id) => {
+    setNotificationsData(notificationsData.map(n => 
+      n.id === id ? { ...n, read: true } : n
+    ));
+  };
+
+  // Marcar todas como leídas
+  const markAllAsRead = () => {
+    setNotificationsData(notificationsData.map(n => ({ ...n, read: true })));
+    Alert.alert('Éxito', 'Todas las notificaciones han sido marcadas como leídas');
+  };
+
+  // Eliminar notificación
+  const deleteNotification = (id) => {
+    setNotificationsData(notificationsData.filter(n => n.id !== id));
+  };
+
+  // Limpiar todas las notificaciones
+  const clearAllNotifications = () => {
+    Alert.alert(
+      'Eliminar todas',
+      '¿Estás seguro de que deseas eliminar todas las notificaciones?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          onPress: () => {
+            setNotificationsData([]);
+            Alert.alert('Éxito', 'Todas las notificaciones han sido eliminadas');
+          },
+          style: 'destructive',
+        },
+      ]
+    );
+  };
+
+  // Manejar click en notificación
+  const handleNotificationPress = (notification) => {
+    markAsRead(notification.id);
+    
+    if (notification.departmentId) {
+      navigation.navigate('DepartmentDetail', {
+        department: { id: notification.departmentId }
+      });
+    }
+  };
+
+  // Filtrar notificaciones
+  const filteredNotifications = filterType
+    ? notificationsData.filter(n => n.type === filterType)
+    : notificationsData;
+
+  const unreadCount = notificationsData.filter(n => !n.read).length;
+  const types = ['success', 'warning', 'info', 'error'];
+
+  const getTypeLabel = (type) => {
+    const labels = {
+      success: 'Éxito',
+      warning: 'Advertencia',
+      info: 'Información',
+      error: 'Error',
+    };
+    return labels[type] || type;
+  };
 
   const getTypeColor = (type) => {
     switch (type) {
@@ -113,55 +189,121 @@ const NotificationsScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
       >
-        {notifications.length > 0 ? (
-          <Card style={styles.card}>
-            {notifications.map((notification, index) => (
-              <View key={notification.id}>
-                <TouchableOpacity
-                  style={[
-                    styles.notificationItem,
-                    !notification.read && styles.unreadItem,
-                  ]}
+        {/* Filtros */}
+        {notificationsData.length > 0 && (
+          <View style={styles.filterContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+              <Chip
+                selected={filterType === null}
+                onPress={() => setFilterType(null)}
+                style={[styles.filterChip, filterType === null && styles.filterChipActive]}
+              >
+                Todas
+              </Chip>
+              {types.map(type => (
+                <Chip
+                  key={type}
+                  selected={filterType === type}
+                  onPress={() => setFilterType(type)}
+                  style={[styles.filterChip, filterType === type && styles.filterChipActive]}
                 >
-                  <View
-                    style={[
-                      styles.iconContainer,
-                      {
-                        backgroundColor:
-                          getTypeColor(notification.type) + '20',
-                      },
-                    ]}
-                  >
-                    <FontAwesome
-                      name={notification.icon}
-                      size={20}
-                      color={getTypeColor(notification.type)}
-                    />
-                  </View>
+                  {getTypeLabel(type)}
+                </Chip>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
-                  <View style={styles.notificationContent}>
-                    <View style={styles.titleRow}>
-                      <Text
-                        style={[
-                          styles.title,
-                          !notification.read && styles.unreadTitle,
-                        ]}
-                      >
-                        {notification.title}
-                      </Text>
-                      {!notification.read && (
-                        <View style={styles.unreadDot} />
-                      )}
+        {/* Botones de acción */}
+        {notificationsData.length > 0 && (
+          <View style={styles.actionButtons}>
+            {unreadCount > 0 && (
+              <Button
+                mode="outlined"
+                size="small"
+                onPress={markAllAsRead}
+                icon="check-all"
+                style={{ flex: 1, marginRight: 8 }}
+              >
+                Marcar todas
+              </Button>
+            )}
+            {notificationsData.length > 0 && (
+              <Button
+                mode="outlined"
+                size="small"
+                onPress={clearAllNotifications}
+                icon="trash-can"
+                style={{ flex: 1 }}
+                textColor="#F44336"
+              >
+                Limpiar
+              </Button>
+            )}
+          </View>
+        )}
+
+        {/* Lista de notificaciones */}
+        {filteredNotifications.length > 0 ? (
+          <Card style={styles.card}>
+            {filteredNotifications.map((notification, index) => (
+              <View key={notification.id}>
+                <View style={styles.notificationItemWrapper}>
+                  <TouchableOpacity
+                    style={[
+                      styles.notificationItem,
+                      !notification.read && styles.unreadItem,
+                    ]}
+                    onPress={() => handleNotificationPress(notification)}
+                    activeOpacity={0.7}
+                  >
+                    <View
+                      style={[
+                        styles.iconContainer,
+                        {
+                          backgroundColor:
+                            getTypeColor(notification.type) + '20',
+                        },
+                      ]}
+                    >
+                      <FontAwesome
+                        name={notification.icon}
+                        size={20}
+                        color={getTypeColor(notification.type)}
+                      />
                     </View>
-                    <Text style={styles.message}>
-                      {notification.message}
-                    </Text>
-                    <Text style={styles.timestamp}>
-                      {notification.timestamp}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                {index < notifications.length - 1 && <Divider />}
+
+                    <View style={styles.notificationContent}>
+                      <View style={styles.titleRow}>
+                        <Text
+                          style={[
+                            styles.title,
+                            !notification.read && styles.unreadTitle,
+                          ]}
+                        >
+                          {notification.title}
+                        </Text>
+                        {!notification.read && (
+                          <View style={styles.unreadDot} />
+                        )}
+                      </View>
+                      <Text style={styles.message}>
+                        {notification.message}
+                      </Text>
+                      <Text style={styles.timestamp}>
+                        {notification.timestamp}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.deleteButton}
+                    onPress={() => deleteNotification(notification.id)}
+                  >
+                    <FontAwesome name="trash" size={16} color="#F44336" />
+                  </TouchableOpacity>
+                </View>
+                {index < filteredNotifications.length - 1 && <Divider />}
               </View>
             ))}
           </Card>
@@ -173,7 +315,7 @@ const NotificationsScreen = ({ navigation }) => {
               color={theme.colors.disabled}
             />
             <Text style={styles.emptyText}>
-              No tienes notificaciones
+              {filterType ? 'No hay notificaciones de este tipo' : 'No tienes notificaciones'}
             </Text>
             <Text style={styles.emptySubText}>
               Te notificaremos sobre cambios importantes
@@ -297,6 +439,39 @@ const createStyles = (theme) =>
       color: theme.colors.disabled,
       marginTop: 8,
       textAlign: 'center',
+    },
+    filterContainer: {
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: theme.colors.surface,
+      marginBottom: 8,
+    },
+    filterScroll: {
+      flexDirection: 'row',
+    },
+    filterChip: {
+      marginRight: 8,
+      backgroundColor: theme.colors.background,
+      borderColor: theme.colors.outline,
+    },
+    filterChipActive: {
+      backgroundColor: theme.colors.primary,
+      borderColor: theme.colors.primary,
+    },
+    actionButtons: {
+      flexDirection: 'row',
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      gap: 8,
+    },
+    notificationItemWrapper: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    deleteButton: {
+      padding: 12,
+      justifyContent: 'center',
+      alignItems: 'center',
     },
   });
 
