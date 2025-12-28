@@ -69,8 +69,9 @@ export default function RegisterScreen({ navigation }) {
       const result = register(nombre, email, password, { telefono, genero });
       if (result.success) {
         // Registro exitoso, navega al Dashboard
-        if (navigation && typeof navigation.replace === 'function') {
-          navigation.replace('Dashboard');
+        if (navigation) {
+          alert("Registro exitoso por favor, inicia sesión con tus datos.");
+          navigation.navigate('LoginScreen');
         }
       } else {
         // Mostrar error si el correo ya existe

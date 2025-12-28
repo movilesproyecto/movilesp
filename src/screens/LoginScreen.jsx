@@ -236,7 +236,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 10,
     borderLeftWidth: 4,
-    borderLeftColor: '#1D4ED8',
+    borderLeftColor: '#3a21ccff',
   },
   infoHeader: {
     flexDirection: 'row',

@@ -7,11 +7,12 @@ import { useAppContext } from '../context/AppContext';
 export default function ReservationForm({ route, navigation }) {
   const preDept = route?.params?.department;
   const theme = useTheme();
-  const { user, canCreateReservation, departments } = useAppContext();
+  const { user, canCreateReservation, departments, reservation } = useAppContext();
   const [dept, setDept] = useState(preDept ? preDept.id : (departments && departments[0] ? departments[0].id : null));
   const [date, setDate] = useState('2025-12-20');
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState('1h');
+  const isFormValid = dept && date && time;
 
   useEffect(() => {
     if (preDept) setDept(preDept.id);
@@ -32,6 +33,19 @@ export default function ReservationForm({ route, navigation }) {
         ]
       );
       return;
+    }
+
+    const yaReservado = reservations.some(res => 
+      res.deptId === dept && res.date === date
+    );
+
+    if (yaReservado) {
+      Alert.alert(
+        'Departamento no disponible',
+        'Este departamento ya tiene una reserva para la fecha seleccionada. Por favor, elige otro día.',
+        [{ text: 'Entendido' }]
+      );
+      return; // Detenemos el proceso
     }
 
     // Obtener el departamento seleccionado para pasar a la pantalla de pago
