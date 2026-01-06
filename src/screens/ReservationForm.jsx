@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, Alert } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, ScrollView, StyleSheet, TextInput, Alert, Picker } from 'react-native';
 import { useTheme, Text, Button, Card } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 
 export default function ReservationForm({ route, navigation }) {
   const preDept = route?.params?.department;
   const theme = useTheme();
-  const { user, canCreateReservation, departments, reservation } = useAppContext();
+  const { user, canCreateReservation, departments } = useAppContext();
   const [dept, setDept] = useState(preDept ? preDept.id : (departments && departments[0] ? departments[0].id : null));
   const [date, setDate] = useState('2025-12-20');
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState('1h');
-  const isFormValid = dept && date && time;
 
   useEffect(() => {
     if (preDept) setDept(preDept.id);
@@ -23,29 +21,10 @@ export default function ReservationForm({ route, navigation }) {
   }, [departments]);
 
   const onSubmit = () => {
-    if (!canCreateReservation(user)) {
-      Alert.alert(
-        'Acceso requerido',
-        'Necesitas iniciar sesión para crear una reserva.',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Iniciar sesión', onPress: () => navigation.navigate('Perfil') },
-        ]
-      );
-      return;
-    }
-
-    const yaReservado = reservations.some(res => 
-      res.deptId === dept && res.date === date
-    );
-
-    if (yaReservado) {
-      Alert.alert(
-        'Departamento no disponible',
-        'Este departamento ya tiene una reserva para la fecha seleccionada. Por favor, elige otro día.',
-        [{ text: 'Entendido' }]
-      );
-      return; // Detenemos el proceso
+    if (!canCreateReservation(user)) { 
+      Alert.alert('Acceso denegado', 'No puedes crear reservas.'); 
+      navigation.goBack(); 
+      return; 
     }
 
     // Obtener el departamento seleccionado para pasar a la pantalla de pago
