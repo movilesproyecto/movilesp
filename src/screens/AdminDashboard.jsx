@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   View,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   FlatList,
-} from 'react-native';
+  StatusBar, // Asegúrate de que esto esté importado
+  Platform,
+} from "react-native";
 import {
   Card,
   Text,
@@ -16,65 +18,126 @@ import {
   Modal,
   Portal,
   Dialog,
-} from 'react-native-paper';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { useAppContext } from '../context/AppContext';
+} from "react-native-paper";
+import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useAppContext } from "../context/AppContext";
 
 const AdminDashboard = ({ navigation }) => {
   const theme = useTheme();
   const { departments, user } = useAppContext();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const [activeTab, setActiveTab] = useState('departamentos');
+  const [activeTab, setActiveTab] = useState("departamentos");
   const [showModal, setShowModal] = useState(false);
   const [selectedDept, setSelectedDept] = useState(null);
 
   // Simulación de datos
   const [reservations] = useState([
-    { id: 1, user: 'Johan Gamer', dept: departments[0]?.name, dates: '15-20 Feb', status: 'pendiente', total: 750 },
-    { id: 2, user: 'María López', dept: departments[1]?.name, dates: '10-15 Feb', status: 'aprobada', total: 600 },
-    { id: 3, user: 'Carlos Pérez', dept: departments[2]?.name, dates: '5-10 Feb', status: 'completada', total: 1200 },
+    {
+      id: 1,
+      user: "Johan Gamer",
+      dept: departments[0]?.name,
+      dates: "15-20 Feb",
+      status: "pendiente",
+      total: 750,
+    },
+    {
+      id: 2,
+      user: "María López",
+      dept: departments[1]?.name,
+      dates: "10-15 Feb",
+      status: "aprobada",
+      total: 600,
+    },
+    {
+      id: 3,
+      user: "Carlos Pérez",
+      dept: departments[2]?.name,
+      dates: "5-10 Feb",
+      status: "completada",
+      total: 1200,
+    },
   ]);
 
   const [users] = useState([
-    { id: 1, email: 'johan11gamerez@gmail.com', role: 'user', reservations: 12, status: 'activo' },
-    { id: 2, email: 'admin@demo.com', role: 'admin', reservations: 0, status: 'activo' },
-    { id: 3, email: 'user@example.com', role: 'user', reservations: 5, status: 'activo' },
+    {
+      id: 1,
+      email: "johan11gamerez@gmail.com",
+      role: "user",
+      reservations: 12,
+      status: "activo",
+    },
+    {
+      id: 2,
+      email: "admin@demo.com",
+      role: "admin",
+      reservations: 0,
+      status: "activo",
+    },
+    {
+      id: 3,
+      email: "user@example.com",
+      role: "user",
+      reservations: 5,
+      status: "activo",
+    },
   ]);
 
   // Estadísticas
   const stats = [
-    { label: 'Departamentos', value: departments.length, icon: 'building', color: '#3B82F6' },
-    { label: 'Reservas', value: reservations.length, icon: 'calendar', color: '#10B981' },
-    { label: 'Usuarios', value: users.length, icon: 'users', color: '#F59E0B' },
-    { label: 'Ingresos Totales', value: `$${reservations.reduce((sum, r) => sum + r.total, 0)}`, icon: 'dollar', color: '#8B5CF6' },
+    {
+      label: "Departamentos",
+      value: departments.length,
+      icon: "building",
+      color: "#3B82F6",
+    },
+    {
+      label: "Reservas",
+      value: reservations.length,
+      icon: "calendar",
+      color: "#10B981",
+    },
+    { label: "Usuarios", value: users.length, icon: "users", color: "#F59E0B" },
+    {
+      label: "Ingresos Totales",
+      value: `$${reservations.reduce((sum, r) => sum + r.total, 0)}`,
+      icon: "dollar",
+      color: "#8B5CF6",
+    },
   ];
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pendiente':
-        return '#FFA500';
-      case 'aprobada':
-        return '#4CAF50';
-      case 'completada':
-        return '#2196F3';
-      case 'cancelada':
-        return '#F44336';
+      case "pendiente":
+        return "#FFA500";
+      case "aprobada":
+        return "#4CAF50";
+      case "completada":
+        return "#2196F3";
+      case "cancelada":
+        return "#F44336";
       default:
-        return '#9E9E9E';
+        return "#9E9E9E";
     }
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+    >
       {/* Header mejorado */}
       <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
           <FontAwesome name="chevron-left" size={24} color="white" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>Panel Administrativo</Text>
-          <Text style={styles.headerSubtitle}>Gestión completa del sistema</Text>
+          <Text style={styles.headerSubtitle}>
+            Gestión completa del sistema
+          </Text>
         </View>
         <TouchableOpacity style={styles.notificationButton}>
           <FontAwesome name="bell" size={20} color="white" />
@@ -84,24 +147,55 @@ const AdminDashboard = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={styles.scrollView}
+      >
         {/* Estadísticas Rápidas - Mejorado */}
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>📊 Resumen General</Text>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            📊 Resumen General
+          </Text>
           <TouchableOpacity>
-            <FontAwesome name="refresh" size={18} color={theme.colors.primary} />
+            <FontAwesome
+              name="refresh"
+              size={18}
+              color={theme.colors.primary}
+            />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.statsGrid}>
           {stats.map((stat, idx) => (
-            <Card key={idx} style={[styles.statCard, { backgroundColor: theme.colors.surface, borderLeftWidth: 4, borderLeftColor: stat.color }]}>
+            <Card
+              key={idx}
+              style={[
+                styles.statCard,
+                {
+                  backgroundColor: theme.colors.surface,
+                  borderLeftWidth: 4,
+                  borderLeftColor: stat.color,
+                },
+              ]}
+            >
               <Card.Content style={styles.statContent}>
-                <View style={[styles.statIcon, { backgroundColor: stat.color + '15' }]}>
+                <View
+                  style={[
+                    styles.statIcon,
+                    { backgroundColor: stat.color + "15" },
+                  ]}
+                >
                   <FontAwesome name={stat.icon} size={22} color={stat.color} />
                 </View>
-                <Text style={[styles.statValue, { color: stat.color }]}>{stat.value}</Text>
-                <Text style={[styles.statLabel, { color: theme.colors.placeholder }]}>
+                <Text style={[styles.statValue, { color: stat.color }]}>
+                  {stat.value}
+                </Text>
+                <Text
+                  style={[
+                    styles.statLabel,
+                    { color: theme.colors.placeholder },
+                  ]}
+                >
                   {stat.label}
                 </Text>
               </Card.Content>
@@ -111,31 +205,47 @@ const AdminDashboard = ({ navigation }) => {
 
         {/* Tabs - Mejorado */}
         <View style={styles.tabsContainer}>
-          {['departamentos', 'reservas', 'usuarios'].map((tab) => (
+          {["departamentos", "reservas", "usuarios"].map((tab) => (
             <TouchableOpacity
               key={tab}
               onPress={() => setActiveTab(tab)}
               style={[
                 styles.tab,
                 activeTab === tab && [
-                  styles.tabActive, 
-                  { backgroundColor: theme.colors.primary + '10', borderBottomColor: theme.colors.primary }
+                  styles.tabActive,
+                  {
+                    backgroundColor: theme.colors.primary + "10",
+                    borderBottomColor: theme.colors.primary,
+                  },
                 ],
               ]}
             >
               <View style={styles.tabContent_}>
-                <FontAwesome 
-                  name={tab === 'departamentos' ? 'home' : tab === 'reservas' ? 'calendar' : 'users'} 
-                  size={16} 
-                  color={activeTab === tab ? theme.colors.primary : theme.colors.placeholder}
+                <FontAwesome
+                  name={
+                    tab === "departamentos"
+                      ? "home"
+                      : tab === "reservas"
+                      ? "calendar"
+                      : "users"
+                  }
+                  size={16}
+                  color={
+                    activeTab === tab
+                      ? theme.colors.primary
+                      : theme.colors.placeholder
+                  }
                   style={{ marginRight: 6 }}
                 />
                 <Text
                   style={[
                     styles.tabLabel,
                     {
-                      color: activeTab === tab ? theme.colors.primary : theme.colors.placeholder,
-                      fontWeight: activeTab === tab ? '600' : '500',
+                      color:
+                        activeTab === tab
+                          ? theme.colors.primary
+                          : theme.colors.placeholder,
+                      fontWeight: activeTab === tab ? "600" : "500",
                     },
                   ]}
                 >
@@ -147,20 +257,25 @@ const AdminDashboard = ({ navigation }) => {
         </View>
 
         {/* Contenido por Tab */}
-        {activeTab === 'departamentos' && (
+        {activeTab === "departamentos" && (
           <View style={styles.tabContentSection}>
             <View style={styles.tabHeader}>
               <View>
                 <Text style={[styles.tabTitle, { color: theme.colors.text }]}>
                   🏠 Departamentos
                 </Text>
-                <Text style={[styles.tabSubtitle, { color: theme.colors.placeholder }]}>
+                <Text
+                  style={[
+                    styles.tabSubtitle,
+                    { color: theme.colors.placeholder },
+                  ]}
+                >
                   {departments.length} propiedades
                 </Text>
               </View>
               <Button
                 mode="contained"
-                onPress={() => navigation.navigate('DepartmentForm')}
+                onPress={() => navigation.navigate("DepartmentForm")}
                 compact
                 contentStyle={{ height: 40, paddingHorizontal: 12 }}
                 style={{ borderRadius: 8 }}
@@ -173,7 +288,10 @@ const AdminDashboard = ({ navigation }) => {
             {departments.map((dept) => (
               <Card
                 key={dept.id}
-                style={[styles.itemCard, { backgroundColor: theme.colors.surface }]}
+                style={[
+                  styles.itemCard,
+                  { backgroundColor: theme.colors.surface },
+                ]}
                 onPress={() => {
                   setSelectedDept(dept);
                   setShowModal(true);
@@ -182,37 +300,74 @@ const AdminDashboard = ({ navigation }) => {
                 <View style={styles.itemContent}>
                   <Avatar.Image
                     size={70}
-                    source={{ uri: dept.images?.[0] || 'https://via.placeholder.com/70' }}
+                    source={{
+                      uri: dept.images?.[0] || "https://via.placeholder.com/70",
+                    }}
                     style={styles.deptAvatar}
                   />
                   <View style={styles.itemInfo}>
                     <View style={styles.itemHeader}>
-                      <Text style={[styles.itemName, { color: theme.colors.text }]} numberOfLines={1}>
+                      <Text
+                        style={[styles.itemName, { color: theme.colors.text }]}
+                        numberOfLines={1}
+                      >
                         {dept.name}
                       </Text>
                       <View style={styles.ratingBadge}>
                         <FontAwesome name="star" size={12} color="#FBBF24" />
-                        <Text style={styles.ratingText}>{dept.rating || '4.5'}</Text>
+                        <Text style={styles.ratingText}>
+                          {dept.rating || "4.5"}
+                        </Text>
                       </View>
                     </View>
-                    <Text style={[styles.itemMeta, { color: theme.colors.placeholder }]} numberOfLines={1}>
+                    <Text
+                      style={[
+                        styles.itemMeta,
+                        { color: theme.colors.placeholder },
+                      ]}
+                      numberOfLines={1}
+                    >
                       📍 {dept.address}
                     </Text>
                     <View style={styles.itemBottom}>
-                      <Text style={[styles.itemPrice, { color: theme.colors.primary }]}>
+                      <Text
+                        style={[
+                          styles.itemPrice,
+                          { color: theme.colors.primary },
+                        ]}
+                      >
                         ${dept.pricePerNight}/noche
                       </Text>
-                      <Text style={[styles.itemCapacity, { color: theme.colors.placeholder }]}>
+                      <Text
+                        style={[
+                          styles.itemCapacity,
+                          { color: theme.colors.placeholder },
+                        ]}
+                      >
                         {dept.bedrooms} hab • {dept.bathrooms || 2} baños
                       </Text>
                     </View>
                   </View>
                 </View>
                 <View style={styles.itemActions}>
-                  <TouchableOpacity style={[styles.actionButton, { backgroundColor: theme.colors.primary + '10' }]}>
-                    <FontAwesome name="pencil" size={16} color={theme.colors.primary} />
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      { backgroundColor: theme.colors.primary + "10" },
+                    ]}
+                  >
+                    <FontAwesome
+                      name="pencil"
+                      size={16}
+                      color={theme.colors.primary}
+                    />
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.actionButton, { backgroundColor: '#DC262620' }]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.actionButton,
+                      { backgroundColor: "#DC262620" },
+                    ]}
+                  >
                     <FontAwesome name="trash" size={16} color="#DC2626" />
                   </TouchableOpacity>
                 </View>
@@ -221,33 +376,66 @@ const AdminDashboard = ({ navigation }) => {
           </View>
         )}
 
-        {activeTab === 'reservas' && (
+        {activeTab === "reservas" && (
           <View style={styles.tabContentSection}>
             <View>
               <Text style={[styles.tabTitle, { color: theme.colors.text }]}>
                 📅 Reservas
               </Text>
-              <Text style={[styles.tabSubtitle, { color: theme.colors.placeholder }]}>
+              <Text
+                style={[
+                  styles.tabSubtitle,
+                  { color: theme.colors.placeholder },
+                ]}
+              >
                 {reservations.length} reservas activas
               </Text>
             </View>
 
             {reservations.map((res) => (
-              <Card key={res.id} style={[styles.itemCard, { backgroundColor: theme.colors.surface }]}>
+              <Card
+                key={res.id}
+                style={[
+                  styles.itemCard,
+                  { backgroundColor: theme.colors.surface },
+                ]}
+              >
                 <View style={styles.reservationContent}>
-                  <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(res.status) }]} />
+                  <View
+                    style={[
+                      styles.statusIndicator,
+                      { backgroundColor: getStatusColor(res.status) },
+                    ]}
+                  />
                   <View style={styles.reservationInfo}>
-                    <Text style={[styles.resName, { color: theme.colors.text }]}>
+                    <Text
+                      style={[styles.resName, { color: theme.colors.text }]}
+                    >
                       {res.user}
                     </Text>
-                    <Text style={[styles.resDept, { color: theme.colors.placeholder }]}>
+                    <Text
+                      style={[
+                        styles.resDept,
+                        { color: theme.colors.placeholder },
+                      ]}
+                    >
                       📍 {res.dept}
                     </Text>
                     <View style={styles.resDateRow}>
-                      <Text style={[styles.resDates, { color: theme.colors.placeholder }]}>
+                      <Text
+                        style={[
+                          styles.resDates,
+                          { color: theme.colors.placeholder },
+                        ]}
+                      >
                         📅 {res.dates}
                       </Text>
-                      <Text style={[styles.resTotal, { color: theme.colors.primary, fontWeight: '700' }]}>
+                      <Text
+                        style={[
+                          styles.resTotal,
+                          { color: theme.colors.primary, fontWeight: "700" },
+                        ]}
+                      >
                         ${res.total}
                       </Text>
                     </View>
@@ -256,15 +444,20 @@ const AdminDashboard = ({ navigation }) => {
                     <Chip
                       label={res.status}
                       style={{
-                        backgroundColor: getStatusColor(res.status) + '20',
+                        backgroundColor: getStatusColor(res.status) + "20",
                       }}
-                      textStyle={{ 
-                        color: getStatusColor(res.status), 
-                        fontWeight: '600',
-                        fontSize: 12
+                      textStyle={{
+                        color: getStatusColor(res.status),
+                        fontWeight: "600",
+                        fontSize: 12,
                       }}
                     />
-                    <Button mode="text" compact size="small" style={{ marginTop: 8 }}>
+                    <Button
+                      mode="text"
+                      compact
+                      size="small"
+                      style={{ marginTop: 8 }}
+                    >
                       Revisar
                     </Button>
                   </View>
@@ -274,52 +467,104 @@ const AdminDashboard = ({ navigation }) => {
           </View>
         )}
 
-        {activeTab === 'usuarios' && (
+        {activeTab === "usuarios" && (
           <View style={styles.tabContentSection}>
             <View>
               <Text style={[styles.tabTitle, { color: theme.colors.text }]}>
                 👥 Usuarios
               </Text>
-              <Text style={[styles.tabSubtitle, { color: theme.colors.placeholder }]}>
+              <Text
+                style={[
+                  styles.tabSubtitle,
+                  { color: theme.colors.placeholder },
+                ]}
+              >
                 {users.length} usuarios registrados
               </Text>
             </View>
 
             {users.map((usr) => (
-              <Card key={usr.id} style={[styles.itemCard, { backgroundColor: theme.colors.surface }]}>
+              <Card
+                key={usr.id}
+                style={[
+                  styles.itemCard,
+                  { backgroundColor: theme.colors.surface },
+                ]}
+              >
                 <View style={styles.userContent}>
-                  <Avatar.Text 
-                    size={50} 
+                  <Avatar.Text
+                    size={50}
                     label={usr.email.charAt(0).toUpperCase()}
                     style={{ backgroundColor: theme.colors.primary }}
                   />
                   <View style={styles.userInfo}>
-                    <Text style={[styles.userName, { color: theme.colors.text }]} numberOfLines={1}>
+                    <Text
+                      style={[styles.userName, { color: theme.colors.text }]}
+                      numberOfLines={1}
+                    >
                       {usr.email}
                     </Text>
                     <View style={styles.userMeta}>
                       <Chip
-                        label={usr.role === 'admin' ? '👨‍💼 Admin' : usr.role === 'root' ? '🔐 Root' : '👤 Usuario'}
+                        label={
+                          usr.role === "admin"
+                            ? "👨‍💼 Admin"
+                            : usr.role === "root"
+                            ? "🔐 Root"
+                            : "👤 Usuario"
+                        }
                         compact
                         style={{
-                          backgroundColor: usr.role === 'admin' ? '#DC262620' : usr.role === 'root' ? '#8B5CF620' : '#3B82F620',
+                          backgroundColor:
+                            usr.role === "admin"
+                              ? "#DC262620"
+                              : usr.role === "root"
+                              ? "#8B5CF620"
+                              : "#3B82F620",
                           marginRight: 6,
                         }}
                         textStyle={{
-                          color: usr.role === 'admin' ? '#DC2626' : usr.role === 'root' ? '#8B5CF6' : '#3B82F6',
+                          color:
+                            usr.role === "admin"
+                              ? "#DC2626"
+                              : usr.role === "root"
+                              ? "#8B5CF6"
+                              : "#3B82F6",
                           fontSize: 11,
-                          fontWeight: '600',
+                          fontWeight: "600",
                         }}
                       />
-                      <Text style={[styles.userStat, { color: theme.colors.placeholder }]}>
+                      <Text
+                        style={[
+                          styles.userStat,
+                          { color: theme.colors.placeholder },
+                        ]}
+                      >
                         {usr.reservations} reservas
                       </Text>
                     </View>
                   </View>
                   <View style={styles.userStatusArea}>
-                    <View style={[styles.statusDot, { backgroundColor: usr.status === 'activo' ? '#10B981' : '#94A3B8' }]} />
-                    <TouchableOpacity style={[styles.userActionBtn, { backgroundColor: theme.colors.primary + '10' }]}>
-                      <FontAwesome name="cog" size={16} color={theme.colors.primary} />
+                    <View
+                      style={[
+                        styles.statusDot,
+                        {
+                          backgroundColor:
+                            usr.status === "activo" ? "#10B981" : "#94A3B8",
+                        },
+                      ]}
+                    />
+                    <TouchableOpacity
+                      style={[
+                        styles.userActionBtn,
+                        { backgroundColor: theme.colors.primary + "10" },
+                      ]}
+                    >
+                      <FontAwesome
+                        name="cog"
+                        size={16}
+                        color={theme.colors.primary}
+                      />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -356,7 +601,9 @@ const AdminDashboard = ({ navigation }) => {
             <Button
               mode="contained"
               onPress={() => {
-                navigation.navigate('DepartmentForm', { departmentId: selectedDept?.id });
+                navigation.navigate("DepartmentForm", {
+                  departmentId: selectedDept?.id,
+                });
                 setShowModal(false);
               }}
             >
@@ -378,13 +625,15 @@ const createStyles = (theme) =>
       paddingBottom: 20,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       paddingHorizontal: 16,
-      paddingVertical: 14,
+      // AQUÍ ESTÁ EL CAMBIO IMPORTANTE:
+      paddingTop: StatusBar.currentHeight ? StatusBar.currentHeight + 35 : 60,
+      paddingBottom: 14,
       elevation: 4,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 3,
@@ -398,139 +647,139 @@ const createStyles = (theme) =>
     },
     headerTitle: {
       fontSize: 20,
-      fontWeight: '700',
-      color: 'white',
+      fontWeight: "700",
+      color: "white",
     },
     headerSubtitle: {
       fontSize: 12,
-      color: '#F1F5F9',
+      color: "#F1F5F9",
       marginTop: 2,
     },
     notificationButton: {
       padding: 8,
-      position: 'relative',
+      position: "relative",
     },
     notificationBadge: {
-      position: 'absolute',
+      position: "absolute",
       right: 0,
       top: 0,
-      backgroundColor: '#EC4899',
+      backgroundColor: "#EC4899",
       borderRadius: 10,
       width: 20,
       height: 20,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
     },
     notificationCount: {
-      color: 'white',
+      color: "white",
       fontSize: 11,
-      fontWeight: 'bold',
+      fontWeight: "bold",
     },
     sectionHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginHorizontal: 16,
       marginTop: 20,
       marginBottom: 12,
     },
     sectionTitle: {
       fontSize: 18,
-      fontWeight: '700',
+      fontWeight: "700",
     },
     statsGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+      flexDirection: "row",
+      flexWrap: "wrap",
       paddingHorizontal: 8,
       gap: 10,
       marginBottom: 12,
     },
     statCard: {
-      width: '48%',
+      width: "48%",
       borderRadius: 12,
       elevation: 2,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06,
       shadowRadius: 2,
     },
     statContent: {
-      alignItems: 'center',
+      alignItems: "center",
       paddingVertical: 16,
     },
     statIcon: {
       width: 48,
       height: 48,
       borderRadius: 24,
-      justifyContent: 'center',
-      alignItems: 'center',
+      justifyContent: "center",
+      alignItems: "center",
       marginBottom: 10,
     },
     statValue: {
       fontSize: 20,
-      fontWeight: '700',
+      fontWeight: "700",
       marginBottom: 4,
     },
     statLabel: {
       fontSize: 12,
-      textAlign: 'center',
-      fontWeight: '500',
+      textAlign: "center",
+      fontWeight: "500",
     },
     tabsContainer: {
-      flexDirection: 'row',
+      flexDirection: "row",
       borderBottomWidth: 1,
-      borderBottomColor: '#E2E8F0',
+      borderBottomColor: "#E2E8F0",
       marginHorizontal: 16,
       marginTop: 8,
     },
     tab: {
       flex: 1,
       paddingVertical: 12,
-      alignItems: 'center',
+      alignItems: "center",
       borderBottomWidth: 2,
-      borderBottomColor: 'transparent',
+      borderBottomColor: "transparent",
     },
     tabActive: {
       borderBottomWidth: 3,
     },
     tabContent_: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
     },
     tabLabel: {
       fontSize: 14,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     tabContentSection: {
       paddingHorizontal: 16,
       paddingVertical: 16,
     },
     tabHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 16,
     },
     tabTitle: {
       fontSize: 18,
-      fontWeight: '700',
+      fontWeight: "700",
     },
     tabSubtitle: {
       fontSize: 12,
       marginTop: 2,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     itemCard: {
       marginBottom: 12,
       borderRadius: 12,
       elevation: 2,
-      shadowColor: '#000',
+      shadowColor: "#000",
       shadowOffset: { width: 0, height: 1 },
       shadowOpacity: 0.06,
       shadowRadius: 2,
     },
     itemContent: {
-      flexDirection: 'row',
+      flexDirection: "row",
       padding: 12,
       gap: 12,
       flex: 1,
@@ -538,76 +787,76 @@ const createStyles = (theme) =>
     deptAvatar: {
       borderRadius: 10,
       borderWidth: 2,
-      borderColor: '#E2E8F0',
+      borderColor: "#E2E8F0",
     },
     itemInfo: {
       flex: 1,
-      justifyContent: 'space-between',
+      justifyContent: "space-between",
     },
     itemHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginBottom: 4,
     },
     itemName: {
       fontSize: 15,
-      fontWeight: '700',
+      fontWeight: "700",
       flex: 1,
     },
     itemMeta: {
       fontSize: 12,
       marginBottom: 6,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     itemBottom: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginTop: 6,
     },
     itemPrice: {
       fontSize: 15,
-      fontWeight: '700',
+      fontWeight: "700",
     },
     itemCapacity: {
       fontSize: 11,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     ratingBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
       gap: 4,
-      backgroundColor: '#FBBF2420',
+      backgroundColor: "#FBBF2420",
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 6,
     },
     ratingText: {
       fontSize: 11,
-      fontWeight: '700',
-      color: '#F59E0B',
+      fontWeight: "700",
+      color: "#F59E0B",
     },
     itemActions: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 8,
       paddingRight: 8,
       paddingVertical: 8,
-      justifyContent: 'center',
+      justifyContent: "center",
     },
     actionButton: {
       padding: 8,
       borderRadius: 8,
     },
     reservationContent: {
-      flexDirection: 'row',
+      flexDirection: "row",
       padding: 12,
       gap: 12,
-      alignItems: 'flex-start',
+      alignItems: "flex-start",
     },
     statusIndicator: {
       width: 4,
-      height: '100%',
+      height: "100%",
       borderRadius: 2,
     },
     reservationInfo: {
@@ -615,56 +864,56 @@ const createStyles = (theme) =>
     },
     resName: {
       fontSize: 15,
-      fontWeight: '700',
+      fontWeight: "700",
       marginBottom: 4,
     },
     resDept: {
       fontSize: 12,
       marginBottom: 4,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     resDateRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
       marginTop: 6,
     },
     resDates: {
       fontSize: 12,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     resTotal: {
       fontSize: 14,
     },
     statusContainer: {
-      alignItems: 'center',
+      alignItems: "center",
     },
     userContent: {
-      flexDirection: 'row',
+      flexDirection: "row",
       padding: 12,
       gap: 12,
-      alignItems: 'center',
+      alignItems: "center",
     },
     userInfo: {
       flex: 1,
     },
     userName: {
       fontSize: 15,
-      fontWeight: '700',
+      fontWeight: "700",
       marginBottom: 6,
     },
     userMeta: {
-      flexDirection: 'row',
+      flexDirection: "row",
       gap: 8,
-      alignItems: 'center',
-      flexWrap: 'wrap',
+      alignItems: "center",
+      flexWrap: "wrap",
     },
     userStat: {
       fontSize: 12,
-      fontWeight: '500',
+      fontWeight: "500",
     },
     userStatusArea: {
-      alignItems: 'center',
+      alignItems: "center",
       gap: 8,
     },
     statusDot: {

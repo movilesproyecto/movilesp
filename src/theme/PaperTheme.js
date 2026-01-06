@@ -1,106 +1,104 @@
-
 import {
   MD3LightTheme as DefaultLightTheme,
   MD3DarkTheme as DefaultDarkTheme,
-  MD3LightTheme as DefaultTheme,
 } from 'react-native-paper';
 
-// Modern & Professional Color Palette
+// --- TEMA BASE (Compatibilidad) ---
 export const PaperTheme = {
-  ...DefaultTheme,
+  ...DefaultLightTheme,
   colors: {
-    ...DefaultTheme.colors,
-    primary: '#334155', 
-    secondary: '#64748B', 
-    tertiary: '#0F172A', 
-    background: '#F8FAFC',
+    ...DefaultLightTheme.colors,
+    primary: '#334155',    // Slate 700
+    secondary: '#64748B',  // Slate 500
+    tertiary: '#0F172A',   // Slate 900
+    background: '#F8FAFC', // Slate 50
     surface: '#FFFFFF',
     text: '#0F172A',
     error: '#DC2626',
   },
 };
 
+// --- TEMA CLARO OPTIMIZADO ---
 export const PaperLightTheme = {
   ...DefaultLightTheme,
   colors: {
     ...DefaultLightTheme.colors,
     // Primary Colors
-    primary: '#334155', // Deep Blue (better contrast)
-    secondary: '#475569', // Deep Purple (better contrast)
-    tertiary: '#059669', // Deep Emerald (better contrast)
+    primary: '#334155',    // Slate 700 (Elegante y serio)
+    secondary: '#475569',  // Slate 600
+    tertiary: '#059669',   // Emerald 600 (Perfecto para "Disponible")
     
     // Backgrounds
-    background: '#FFFFFF', // Pure white for light mode
-    surface: '#F8FAFC', // Light gray for cards
+    background: '#FFFFFF', 
+    surface: '#F8FAFC',    // Gris muy tenue para tarjetas
     
     // Text Colors
-    text: '#1E293B', // Darker text
+    text: '#1E293B',       // Slate 800
     onSurface: '#1E293B',
     placeholder: '#94A3B8',
     
     // Status Colors
-    success: '#059669',
-    warning: '#D97706',
-    error: '#E11D48',
-    info: '#334155',
+    success: '#059669',    // Esmeralda
+    warning: '#D97706',    // Ámbar
+    error: '#E11D48',      // Rosa/Rojo
+    info: '#334155',       // Azul Slate
     
-    // Custom colors
-    topBar: '#334155', // Deep Blue
-    onTopBar: '#FFFFFF',
-    snackbar: '#1E293B', // Deep Purple
+    // Custom colors para DeptBook
+    topBar: '#334155',     // Color sólido para el Header
+    onTopBar: '#FFFFFF',   // Texto sobre Header
+    snackbar: '#1E293B',   // Fondo oscuro para notificaciones
     onSnackbar: '#FFFFFF',
-    accent: '#64748B', // Pink accent
+    accent: '#64748B',     // Slate secundario
     
     // Surface variants
-    surfaceVariant: '#F3F4F6',
-    outline: '#D1D5DB',
+    surfaceVariant: '#F1F5F9', // Slate 100
+    outline: '#E2E8F0',        // Slate 200 (Bordes finos)
     
-    disabled: '#E5E7EB',
-    secondaryContainer: '#EDE9FE',
-    tertiary: '#059669',
+    disabled: '#CBD5E1',
+    secondaryContainer: '#F1F5F9',
   },
 };
 
+// --- TEMA OSCURO OPTIMIZADO ---
 export const PaperDarkTheme = {
   ...DefaultDarkTheme,
   colors: {
     ...DefaultDarkTheme.colors,
     // Primary Colors
-    primary: '#94A3B8', // Bright Blue (more visible)
-    secondary: '#A78BFA', // Light Purple
-    tertiary: '#34D399', // Light Emerald
+    primary: '#94A3B8',    // Slate 400 (Más brillo en fondo oscuro)
+    secondary: '#CBD5E1',  // Slate 300
+    tertiary: '#34D399',   // Emerald 400
     
     // Backgrounds
-    background: '#111827', // Very dark background
-    surface: '#1F2937', // Dark slate cards
+    background: '#0F172A', // Slate 900 (Azul muy oscuro, no negro puro)
+    surface: '#1E293B',    // Slate 800 para tarjetas flotantes
     
     // Text Colors
-    text: '#F9FAFB', // Very light text - MEJORADO
-    onSurface: '#F0F4F8', // Even lighter for better contrast
-    placeholder: '#D1D5DB', // Lighter placeholder
+    text: '#F8FAFC',       
+    onSurface: '#F1F5F9',  
+    placeholder: '#64748B',
     
     // Status Colors
     success: '#34D399',
-    warning: '#FCD34D',
-    error: '#F87171',
+    warning: '#FBBF24',
+    error: '#FB7185',
     info: '#60A5FA',
     
     // Custom colors
-    topBar: '#1F2937',
-    onTopBar: '#F9FAFB',
-    snackbar: '#A78BFA',
-    onSnackbar: '#111827',
-    accent: '#F472B6',
+    topBar: '#1E293B',     // Fondo Slate 800
+    onTopBar: '#F8FAFC',
+    snackbar: '#94A3B8',
+    onSnackbar: '#0F172A',
+    accent: '#94A3B8',
     
     // Surface variants
-    surfaceVariant: '#374151',
-    outline: '#4B5563',
+    surfaceVariant: '#334155', // Slate 700
+    outline: '#475569',        // Slate 600
     
-    disabled: '#9CA3AF', // Lighter disabled text
-    secondaryContainer: '#3F366B',
-    tertiary: '#34D399',
+    disabled: '#475569',
+    secondaryContainer: '#334155',
   },
 };
 
-// default export kept for backward compatibility
+// default export para mantener compatibilidad
 export default PaperTheme;
