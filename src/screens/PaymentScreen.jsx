@@ -6,7 +6,7 @@ import { useAppContext } from '../context/AppContext';
 
 const PaymentScreen = ({ route, navigation }) => {
   const theme = useTheme();
-  const { createReservation } = useAppContext();
+  const { createReservation, showSnackbar } = useAppContext();
   const [selectedMethod, setSelectedMethod] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -59,19 +59,17 @@ const PaymentScreen = ({ route, navigation }) => {
 
     setLoading(true);
 
-    // Simular procesamiento de pago
-    setTimeout(() => {
-      setLoading(false);
+    // Procesar pago con backend
+    try {
+      const result = await createReservation(
+        reservationData.deptId,
+        reservationData.date,
+        reservationData.time,
+        reservationData.duration,
+        selectedMethod
+      );
 
-      // Crear la reserva
-      const result = createReservation({
-        deptId: reservationData.deptId,
-        date: reservationData.date,
-        time: reservationData.time,
-        duration: reservationData.duration,
-        paymentMethod: selectedMethod,
-        status: 'confirmed',
-      });
+      setLoading(false);
 
       if (result.success) {
         Alert.alert(
@@ -87,9 +85,15 @@ const PaymentScreen = ({ route, navigation }) => {
           ]
         );
       } else {
-        Alert.alert('Error', result.message || 'Ocurrió un error al procesar el pago');
+        const errorMsg = typeof result.message === 'string' 
+          ? result.message 
+          : JSON.stringify(result.error || result.message || 'Error desconocido');
+        Alert.alert('Error', errorMsg);
       }
-    }, 2000);
+    } catch (e) {
+      setLoading(false);
+      Alert.alert('Error', e.message || 'Ocurrió un error al procesar el pago');
+    }
   };
 
   return (

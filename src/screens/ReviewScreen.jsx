@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -25,46 +25,12 @@ import { useAppContext } from '../context/AppContext';
 const ReviewScreen = ({ route, navigation }) => {
   const theme = useTheme();
   const { departmentId } = route.params;
-  const { user, departments } = useAppContext();
+  const { user, departments, fetchReviews, submitReview } = useAppContext();
   const department = departments.find(d => d.id === departmentId);
 
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const [reviews, setReviews] = useState([
-    {
-      id: 1,
-      userName: 'Carlos López',
-      userAvatar: 'https://i.pravatar.cc/150?img=1',
-      rating: 5,
-      title: 'Excelente departamento',
-      text: 'Muy limpio, cómodo y el anfitrión fue muy atento. Sin dudas volvería a reservar.',
-      date: '2024-01-15',
-      verified: true,
-      helpful: 12,
-    },
-    {
-      id: 2,
-      userName: 'María Gómez',
-      userAvatar: 'https://i.pravatar.cc/150?img=2',
-      rating: 4,
-      title: 'Buena ubicación',
-      text: 'El lugar está muy bien ubicado, pero el aire acondicionado es un poco viejo.',
-      date: '2024-01-10',
-      verified: true,
-      helpful: 8,
-    },
-    {
-      id: 3,
-      userName: 'Juan Pérez',
-      userAvatar: 'https://i.pravatar.cc/150?img=3',
-      rating: 5,
-      title: 'Perfecto para familias',
-      text: 'Espacioso, bien equipado y seguro. El dueño muy responsable.',
-      date: '2024-01-05',
-      verified: true,
-      helpful: 15,
-    },
-  ]);
+  const [reviews, setReviews] = useState([]);
 
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -74,8 +40,34 @@ const ReviewScreen = ({ route, navigation }) => {
   });
 
   const averageRating = (
-    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    (reviews.length ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0)
   ).toFixed(1);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      if (!departmentId) return;
+      const res = await fetchReviews(departmentId, { per_page: 50 });
+      if (!mounted) return;
+      if (res.success) {
+        const items = res.data?.data || res.data || [];
+        const mapped = (items || []).map((r) => ({
+          id: String(r.id),
+          userName: r.user?.name || r.user?.email?.split('@')[0] || 'Usuario',
+          userAvatar: r.user?.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random()*70)}`,
+          rating: r.stars || r.rating || 0,
+          title: '',
+          text: r.comment || '',
+          date: r.created_at || r.date || '',
+          verified: !!r.user_id,
+          helpful: 0,
+        }));
+        setReviews(mapped);
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, [departmentId]);
 
   const handleSubmitReview = () => {
     if (!formData.title.trim() || !formData.text.trim()) {
@@ -83,22 +75,31 @@ const ReviewScreen = ({ route, navigation }) => {
       return;
     }
 
-    const newReview = {
-      id: reviews.length + 1,
-      userName: user?.email.split('@')[0] || 'Usuario',
-      userAvatar: `https://i.pravatar.cc/150?img=${Math.random() * 70}`,
-      rating: formData.rating,
-      title: formData.title,
-      text: formData.text,
-      date: new Date().toISOString().split('T')[0],
-      verified: true,
-      helpful: 0,
-    };
-
-    setReviews([newReview, ...reviews]);
-    setFormData({ rating: 5, title: '', text: '' });
-    setShowReviewForm(false);
-    Alert.alert('Éxito', 'Tu reseña ha sido publicada');
+    // submit to backend
+    (async () => {
+      const comment = `${formData.title.trim()}\n\n${formData.text.trim()}`;
+      const res = await submitReview(departmentId, formData.rating, comment);
+      if (res.success) {
+        const r = res.data;
+        const created = {
+          id: String(r.id),
+          userName: r.user?.name || r.user?.email?.split('@')[0] || 'Usuario',
+          userAvatar: r.user?.avatar || `https://i.pravatar.cc/150?img=${Math.floor(Math.random()*70)}`,
+          rating: r.stars || r.rating || 0,
+          title: '',
+          text: r.comment || '',
+          date: r.created_at || new Date().toISOString().split('T')[0],
+          verified: !!r.user_id,
+          helpful: 0,
+        };
+        setReviews([created, ...reviews]);
+        setFormData({ rating: 5, title: '', text: '' });
+        setShowReviewForm(false);
+        Alert.alert('Éxito', 'Tu reseña ha sido publicada');
+      } else {
+        Alert.alert('Error', res.message || 'No se pudo publicar la reseña');
+      }
+    })();
   };
 
   const handleHelpful = (reviewId) => {

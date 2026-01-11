@@ -6,13 +6,14 @@ import { useAppContext } from '../context/AppContext';
 import ImageCarousel from '../components/ImageCarousel';
 
 export default function DepartmentDetail({ route, navigation }) {
-  const { department, id } = route.params || {};
+  const { department, id, departmentId } = route.params || {};
   const theme = useTheme();
-  const { canEditDepartment, user, departments, userRatings = {}, setUserRating, isFavorite, toggleFavorite, getPromotionsByDept } = useAppContext();
+  const { canEditDepartment, user, departments, userRatings = {}, setUserRating, isFavorite, toggleFavorite, apiToggleFavorite, getPromotionsByDept } = useAppContext();
   const [hoverRating, setHoverRating] = useState(0);
   
   // Si no viene departamento en params, buscarlo por ID
-  const dept = department || (id ? departments.find(d => d.id === id) : null);
+  const deptId = id || departmentId;
+  const dept = department || (deptId ? departments.find(d => String(d.id) === String(deptId)) : null);
 
   if (!dept) {
     return (
@@ -23,7 +24,12 @@ export default function DepartmentDetail({ route, navigation }) {
     );
   }
   
-  const department_to_use = dept;
+  // Asegurar que rating siempre tenga un valor numérico (fallback a 4.0 si no existe)
+  const safeRating = typeof dept.rating === 'number' ? dept.rating : (typeof dept.rating_avg === 'number' ? dept.rating_avg : 4.0);
+  const department_to_use = {
+    ...dept,
+    rating: safeRating,
+  };
   const userRating = userRatings?.[department_to_use.id] || 0;
   const favorited = isFavorite(department_to_use.id);
   const applicablePromotions = getPromotionsByDept(department_to_use.id);
@@ -78,7 +84,7 @@ export default function DepartmentDetail({ route, navigation }) {
             subtitle={department_to_use.address}
             right={() => (
               <TouchableOpacity 
-                onPress={() => toggleFavorite(department_to_use.id)}
+                onPress={() => (apiToggleFavorite ? apiToggleFavorite(department_to_use.id) : toggleFavorite(department_to_use.id))}
                 style={{ paddingRight: 16 }}
               >
                 <FontAwesome 

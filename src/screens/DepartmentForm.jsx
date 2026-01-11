@@ -9,7 +9,7 @@ import ImageCarousel from '../components/ImageCarousel';
 export default function DepartmentForm({ route, navigation }) {
   const dept = route?.params?.department;
   const theme = useTheme();
-  const { user, canCreateDepartment, canEditDepartment, createDepartment, editDepartment } = useAppContext();
+  const { user, canCreateDepartment, canEditDepartment, createDepartment, editDepartment, apiUpdateDepartment, apiUploadImages } = useAppContext();
   
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -22,6 +22,7 @@ export default function DepartmentForm({ route, navigation }) {
   const [images, setImages] = useState([]);
   const [imageError, setImageError] = useState('');
   const [pickingImage, setPickingImage] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (dept) {
@@ -48,14 +49,52 @@ export default function DepartmentForm({ route, navigation }) {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0];
         if (selectedImage.uri) {
-          setImages([...images, selectedImage.uri]);
-          Alert.alert('Éxito', 'Imagen agregada a la galería');
+          // Validar tamaño de imagen (máximo 5MB)
+          const validImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+          const imageName = selectedImage.uri.toLowerCase();
+          const isValidExt = validImageExtensions.some(ext => imageName.includes(ext));
+          
+          if (!isValidExt) {
+            Alert.alert('Error', 'Solo se permiten imágenes JPG, PNG, GIF o WEBP');
+            return;
+          }
+          
+          // Si el departamento ya existe, subir a través de la API
+          if (dept?.id) {
+            await uploadImageToBackend(dept.id, selectedImage.uri);
+          } else {
+            // Si es nuevo, agregar a lista local
+            setImages([...images, selectedImage.uri]);
+            Alert.alert('Éxito', 'Imagen agregada a la galería');
+          }
         }
       }
     } catch (error) {
       Alert.alert('Error', 'No se pudo acceder a la galería');
     } finally {
       setPickingImage(false);
+    }
+  };
+
+  const uploadImageToBackend = async (deptId, imageUri) => {
+    setUploading(true);
+    try {
+      // Convertir URI local a blob para envío
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+      const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+      
+      const result = await apiUploadImages(deptId, [file]);
+      if (result.success) {
+        setImages(prev => [...prev, ...result.images]);
+        Alert.alert('Éxito', 'Imagen subida correctamente');
+      } else {
+        Alert.alert('Error', result.error?.message || 'No se pudo subir la imagen');
+      }
+    } catch (e) {
+      Alert.alert('Error', 'Error al subir imagen: ' + e.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -80,6 +119,19 @@ export default function DepartmentForm({ route, navigation }) {
       setImageError('URL inválida. Usa un enlace a JPG, PNG, GIF o WEBP');
       return;
     }
+    
+    // Verificar duplicados
+    if (images.includes(imageUrl)) {
+      setImageError('Esta imagen ya ha sido agregada');
+      return;
+    }
+    
+    // Máximo 10 imágenes
+    if (images.length >= 10) {
+      setImageError('Máximo 10 imágenes permitidas');
+      return;
+    }
+    
     setImages([...images, imageUrl]);
     setImageUrl('');
   };
@@ -99,7 +151,7 @@ export default function DepartmentForm({ route, navigation }) {
     setAmenities(amenities.filter((_, i) => i !== idx));
   };
 
-  const onSave = () => {
+  const onSave = async () => {
     if (!name.trim() || !address.trim() || !bedrooms.trim() || !pricePerNight.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos requeridos.');
       return;
@@ -125,8 +177,6 @@ export default function DepartmentForm({ route, navigation }) {
       pricePerNight: priceNum,
       description,
       amenities,
-      images,
-      rating: dept?.rating || 4.0,
     };
 
     if (dept) {
@@ -135,18 +185,29 @@ export default function DepartmentForm({ route, navigation }) {
         navigation.goBack();
         return;
       }
-      editDepartment(dept.id, data);
-      Alert.alert('Guardado', 'Departamento actualizado.');
+      // Use API to update on backend
+      const result = await apiUpdateDepartment(dept.id, data);
+      if (result.success) {
+        Alert.alert('Guardado', 'Departamento actualizado.');
+        navigation.navigate('Departamentos');
+      } else {
+        Alert.alert('Error', result.message || 'No se pudo actualizar el departamento.');
+      }
     } else {
       if (!canCreateDepartment(user)) {
         Alert.alert('Acceso denegado', 'No puedes crear departamentos.');
         navigation.goBack();
         return;
       }
-      createDepartment(name, address, data);
-      Alert.alert('Creado', 'Departamento creado correctamente.');
+      // Use API to create on backend
+      const result = await createDepartment(name, address, data);
+      if (result.success) {
+        Alert.alert('Creado', 'Departamento creado correctamente.');
+        navigation.navigate('Departamentos');
+      } else {
+        Alert.alert('Error', result.message || 'No se pudo crear el departamento.');
+      }
     }
-    navigation.navigate('Departamentos');
   };
 
   return (
@@ -170,7 +231,7 @@ export default function DepartmentForm({ route, navigation }) {
       {images.length > 0 && (
         <>
           <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-            <Card.Title title={`Galería (${images.length} imagen${images.length !== 1 ? 's' : ''})`} />
+            <Card.Title title={`Galería (${images.length}/${10})`} />
             <Card.Content>
               <ImageCarousel images={images} />
               <View style={styles.imageList}>
@@ -193,17 +254,18 @@ export default function DepartmentForm({ route, navigation }) {
 
       {/* Agregar imágenes */}
       <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Title title="Agregar imágenes" />
+        <Card.Title title={`Agregar imágenes ${images.length < 10 ? `(${10 - images.length} restantes)` : '(máximo alcanzado)'}`} />
         <Card.Content>
           <Button
             mode="contained"
             icon="image-plus"
             onPress={pickImageFromGallery}
-            disabled={pickingImage}
+            disabled={pickingImage || uploading || images.length >= 10}
             style={{ marginBottom: 12 }}
             buttonColor={theme.colors.primary}
+            loading={pickingImage || uploading}
           >
-            {pickingImage ? 'Cargando...' : 'Seleccionar de galería'}
+            {uploading ? 'Subiendo...' : (pickingImage ? 'Cargando...' : 'Seleccionar de galería')}
           </Button>
 
           <Divider style={{ marginVertical: 12 }} />

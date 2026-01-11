@@ -7,7 +7,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export default function DepartmentsList({ navigation }) {
   const theme = useTheme();
-  const { user, canCreateDepartment, canEditDepartment, departments, isFavorite, toggleFavorite, getPromotionsByDept } = useAppContext();
+  const { user, canCreateDepartment, canEditDepartment, departments, isFavorite, toggleFavorite, apiToggleFavorite, getPromotionsByDept } = useAppContext();
   const insets = useSafeAreaInsets();
   const [sortBy, setSortBy] = useState('none');
   const [page, setPage] = useState(1);
@@ -51,7 +51,7 @@ export default function DepartmentsList({ navigation }) {
               </View>
             )}
             <TouchableOpacity 
-              onPress={() => toggleFavorite(item.id)}
+              onPress={() => (apiToggleFavorite ? apiToggleFavorite(item.id) : toggleFavorite(item.id))}
               style={[styles.favBadge, { backgroundColor: favorited ? '#EF4444' : theme.colors.surfaceVariant }]}
             >
               <FontAwesome name={favorited ? 'heart' : 'heart-o'} size={16} color={favorited ? 'white' : theme.colors.disabled} />

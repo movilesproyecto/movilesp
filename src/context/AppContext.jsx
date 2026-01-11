@@ -1,4 +1,7 @@
 import React, { createContext, useState, useContext } from 'react';
+import { useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient, { API_URL } from '../service/apiClient';
 
 export const Roles = {
     USER: 'user',
@@ -40,20 +43,419 @@ export function AppProvider({ children }) {
             bio: 'Superadministrador',
         },
     ]);
-    const [departments, setDepartments] = useState([
-        { id: '1', name: 'Departamento Centro - A1', address: 'Av. Central 123, Centro', bedrooms: 2, pricePerNight: 45, rating: 4.5, description: 'Acogedor departamento céntrico, ideal para estancias cortas.', amenities: ['WiFi','Cocina','A/C'], images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&q=80','https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&q=80'] },
-        { id: '2', name: 'Loft Moderno - B2', address: 'Calle 9 No. 45, Barrio Moderno', bedrooms: 1, pricePerNight: 60, rating: 4.8, description: 'Loft con diseño moderno y vista a la ciudad.', amenities: ['WiFi','TV','Lavadora'], images: ['https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=1200&q=80','https://images.unsplash.com/photo-1513161455079-7ef1a827e926?w=1200&q=80'] },
-        { id: '3', name: 'Casa Familiar - C3', address: 'Sector Norte 77, Zona Residencial', bedrooms: 3, pricePerNight: 80, rating: 4.2, description: 'Amplia casa ideal para familias, con jardín.', amenities: ['Cocina','Estacionamiento','Jardín'], images: ['https://images.unsplash.com/photo-1570129477492-45a003537e1f?w=1200&q=80','https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=1200&q=80'] },
-        { id: '4', name: 'Suite Ejecutiva - D4', address: 'Torre Premium, Av. Reforma 500', bedrooms: 2, pricePerNight: 120, rating: 4.9, description: 'Lujo y comodidad en el corazón financiero de la ciudad.', amenities: ['WiFi','Gym','Piscina','Room Service'], images: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=1200&q=80'] },
-        { id: '5', name: 'Cabaña Campestre - E5', address: 'Km 15 Vía al Valle, Zona Rural', bedrooms: 4, pricePerNight: 75, rating: 4.6, description: 'Desconéctate en plena naturaleza con todas las comodidades.', amenities: ['Chimenea','Parque','BBQ','Piscina Natural'], images: ['https://images.unsplash.com/photo-1510798831971-661eb04cbb35?w=1200&q=80'] },
-        { id: '6', name: 'Apartamento Minimalista - F6', address: 'Barrio Artístico, Calle Cultura 88', bedrooms: 1, pricePerNight: 50, rating: 4.4, description: 'Diseño contemporáneo en zona bohemia ideal para viajeros.', amenities: ['WiFi','Cocina Moderna','A/C','Espacio Trabajo'], images: ['https://images.unsplash.com/photo-1493857671505-72967e2e2760?w=1200&q=80'] },
-        { id: '7', name: 'Penthouse Lujo - G7', address: 'Piso 45, Edificio Sky, Centro', bedrooms: 3, pricePerNight: 200, rating: 4.95, description: 'Vistas panorámicas de la ciudad desde tu hogar temporal.', amenities: ['WiFi','Terraza','Jacuzzi','Bar Privado'], images: ['https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200&q=80'] },
-        { id: '8', name: 'Estudio Cerca a Universidad - H8', address: 'Barrio Universitario, Calle Principal 45', bedrooms: 0, pricePerNight: 35, rating: 4.3, description: 'Perfecto para estudiantes, próximo a campus.', amenities: ['WiFi','Cocina','Lavadora','Seguridad'], images: ['https://images.unsplash.com/photo-1554992528-8168e04dffef?w=1200&q=80'] },
-        { id: '9', name: 'Villa Tropical - I9', address: 'Costa Verde, Calle del Mar 200', bedrooms: 5, pricePerNight: 150, rating: 4.7, description: 'Paraíso para familias grandes con acceso a playa.', amenities: ['Piscina','Playa Privada','Jardín','Terraza'], images: ['https://images.unsplash.com/photo-1589922582435-891a5794de5c?w=1200&q=80'] },
-        { id: '10', name: 'Loft Industrial - J10', address: 'Zona de Lofts, Calle Fábrica 77', bedrooms: 2, pricePerNight: 65, rating: 4.6, description: 'Estilo industrial con toque moderno, espacio abierto.', amenities: ['WiFi','Cocina Abierta','Aire Acondicionado','Patio'], images: ['https://images.unsplash.com/photo-1549908536-5f45ffe686e4?w=1200&q=80'] },
-    ]);
+    const [departments, setDepartments] = useState([]);
+    const [authToken, setAuthToken] = useState(null);
 
     const [favorites, setFavorites] = useState(['2', '4', '7', '9']);
+
+    useEffect(() => {
+        // fetch departments from backend API on mount (using apiClient)
+        async function load() {
+            try {
+                const res = await apiClient.get('/departments');
+                const data = res?.data?.data || res?.data;
+                if (!data) return; // keep defaults if error
+                // Manejar tanto formato paginado como array directo
+                const depts = Array.isArray(data) ? data : (data.data || []);
+                // ensure id is string and basic defaults
+                setDepartments((depts || []).map(d => ({
+                    id: String(d.id),
+                    name: d.name || '',
+                    address: d.address || '',
+                    bedrooms: d.bedrooms ?? 1,
+                    pricePerNight: (d.price_per_night || d.pricePerNight) ?? 50,
+                    rating: (d.rating_avg || d.rating) ?? 4.0,
+                    description: d.description || '',
+                    amenities: d.amenities || [],
+                    images: d.images || [],
+                })));
+            } catch (e) {
+                // ignore - keep empty or seeded UI
+            }
+        }
+        load();
+    }, []);
+
+    useEffect(() => {
+        // load token if present
+        async function loadToken(){
+            try{
+                const t = await AsyncStorage.getItem('token');
+                if (t) setAuthToken(t);
+            }catch(e){ }
+        }
+        loadToken();
+    }, []);
+
+    // Cargar datos del usuario autenticado
+    const loadUserProfile = async () => {
+        if (!authToken) return;
+        try {
+            const res = await apiClient.get('/auth/me');
+            const userData = res.data;
+            setUser({
+                id: userData.id,
+                nombre: userData.name,
+                correo: userData.email,
+                rol: userData.role || Roles.USER,
+                bio: userData.bio || '',
+                telefono: userData.phone || '',
+                genero: userData.gender || '',
+            });
+        } catch (e) {
+            console.error('[AUTH] Error loading profile:', e.message);
+        }
+    };
+
+    // Cargar favoritos del usuario
+    const loadUserFavorites = async () => {
+        if (!authToken) return;
+        try {
+            const res = await apiClient.get('/departments');
+            const data = res?.data?.data || res?.data;
+            const depts = Array.isArray(data) ? data : (data.data || []);
+            // Obtener IDs de favoritos del usuario
+            const favorited = depts
+                .filter(d => d.favorited_by && Array.isArray(d.favorited_by) && d.favorited_by.some(fav => fav.id === user?.id))
+                .map(d => String(d.id));
+            setFavorites(favorited);
+        } catch (e) {
+            console.error('[FAVORITES] Error loading:', e.message);
+        }
+    };
+
+    useEffect(() => {
+        // Cargar perfil y favoritos cuando el usuario se autentica
+        if (authToken && user) {
+            loadUserProfile();
+            loadUserFavorites();
+        }
+    }, [authToken, user?.id]);
+
+    useEffect(() => {
+        // Reload departments when user logs in
+        if (user) {
+            async function load() {
+                try {
+                    const res = await apiClient.get('/departments');
+                    const data = res?.data?.data || res?.data;
+                    if (!data) return;
+                    const depts = Array.isArray(data) ? data : (data.data || []);
+                    setDepartments((depts || []).map(d => ({
+                        id: String(d.id),
+                        name: d.name || '',
+                        address: d.address || '',
+                        bedrooms: d.bedrooms ?? 1,
+                        pricePerNight: (d.price_per_night || d.pricePerNight) ?? 50,
+                        rating: (d.rating_avg || d.rating) ?? 4.0,
+                        description: d.description || '',
+                        amenities: d.amenities || [],
+                        images: d.images || [],
+                    })));
+                } catch (e) {
+                    // ignore
+                }
+            }
+            load();
+        }
+    }, [user]);
+
+    const authHeaders = async () => {
+        const t = authToken || await AsyncStorage.getItem('token');
+        return t ? { 'Authorization': `Bearer ${t}` } : {};
+    };
+
+    const fetchWithAuth = async (url, opts = {}) => {
+        const headers = opts.headers || {};
+        const ah = await authHeaders();
+        return fetch(url, { ...opts, headers: { 'Content-Type': 'application/json', ...headers, ...ah } });
+    };
+
+    // Auth API helpers (con retry logic automático)
+    const apiLogin = async (email, password, retries = 2) => {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const res = await apiClient.post('/auth/login', { email, password });
+                const json = res.data;
+                const token = json.token || json.access_token;
+                if (!token) return { success: false, message: 'No token' };
+                await AsyncStorage.setItem('token', token);
+                setAuthToken(token);
+                setUser(json.user || json);
+                console.log('[AUTH] Login exitoso en intento', attempt + 1);
+                return { success: true, user: json.user || json };
+            } catch (e) {
+                console.warn(`[AUTH] Intento ${attempt + 1}/${retries + 1} falló:`, e.message);
+                
+                // Si es el último intento, retornar error
+                if (attempt === retries) {
+                    // Mostrar error específico (no fallback local que ralentiza)
+                    const errorMsg = e.response?.data?.message || e.message || 'Error de conexión. Verifica tu internet.';
+                    return { 
+                        success: false, 
+                        error: e.response?.data || e.message, 
+                        message: errorMsg 
+                    };
+                }
+                // Esperar un poco antes de reintentar (backoff simple)
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+    };
+
+    const apiRegister = async (name, email, password) => {
+        try {
+            const res = await apiClient.post('/auth/register', { name, email, password });
+            const json = res.data;
+            const token = json.token || json.access_token;
+            if (!token) return { success: false, message: 'No token' };
+            await AsyncStorage.setItem('token', token);
+            setAuthToken(token);
+            setUser(json.user || json);
+            console.log('[AUTH] Register exitoso');
+            return { success: true, user: json.user || json };
+        } catch (e) {
+            const errorMsg = e.response?.data?.message || e.message || 'Error al registrar';
+            console.warn('[AUTH] Register error:', errorMsg);
+            return { success: false, error: e.response?.data || e.message, message: errorMsg };
+        }
+    };
+
+    const apiLogout = async () => {
+        try{
+            await apiClient.post('/auth/logout');
+        }catch(e){}
+        await AsyncStorage.removeItem('token');
+        setAuthToken(null);
+        setUser(null);
+    };
+
+    // API Update Department
+    const apiUpdateDepartment = async (deptId, updates) => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try {
+            const res = await apiClient.put(`/departments/${deptId}`, {
+                name: updates.name,
+                address: updates.address,
+                bedrooms: updates.bedrooms,
+                price_per_night: updates.pricePerNight,
+                description: updates.description,
+                amenities: updates.amenities,
+            });
+            const data = res.data?.data || res.data;
+            // Update local departments list
+            setDepartments(prevDepts => prevDepts.map(d => {
+                if (String(d.id) === String(deptId)) {
+                    return {
+                        id: String(data.id),
+                        name: data.name || '',
+                        address: data.address || '',
+                        bedrooms: data.bedrooms ?? 1,
+                        pricePerNight: (data.price_per_night || data.pricePerNight) ?? 50,
+                        rating: (data.rating_avg || data.rating) ?? 4.0,
+                        description: data.description || '',
+                        amenities: data.amenities || [],
+                        images: data.images || [],
+                    };
+                }
+                return d;
+            }));
+            return { success: true, data };
+        } catch (e) {
+            const errorMsg = e.response?.data?.message || e.message || 'Error updating department';
+            console.warn('[API] Update department error:', errorMsg);
+            return { success: false, error: e.response?.data, message: errorMsg };
+        }
+    };
+
+    // Department actions
+    const apiToggleFavorite = async (deptId) => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try{
+            // if currently favorited locally, unfavorite
+            if (favorites.includes(deptId)){
+                const res = await apiClient.delete(`/departments/${deptId}/favorite`);
+                if (res.status >= 200 && res.status < 300) setFavorites(favorites.filter(id => id !== deptId));
+                return { success: res.status >= 200 && res.status < 300 };
+            }else{
+                const res = await apiClient.post(`/departments/${deptId}/favorite`);
+                if (res.status >= 200 && res.status < 300) setFavorites([...favorites, deptId]);
+                return { success: res.status >= 200 && res.status < 300 };
+            }
+        }catch(e){ return { success: false, error: e.response?.data || e.message }; }
+    };
+
+    const apiRateDepartment = async (deptId, stars, comment = '') => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try{
+            const res = await apiClient.post(`/departments/${deptId}/rate`, { stars, comment });
+            const json = res.data;
+            return { success: true, review: json };
+        }catch(e){ return { success: false, error: e.response?.data || e.message }; }
+    };
+
+    // Reviews API: fetch and submit reviews tied to departments
+    const fetchReviews = async (deptId, params = {}) => {
+        try {
+            const res = await apiClient.get(`/departments/${deptId}/reviews`, { params });
+            return { success: true, data: res.data };
+        } catch (e) {
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
+    const submitReview = async (deptId, rating, comment = '') => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try {
+            const res = await apiClient.post(`/departments/${deptId}/reviews`, { rating, comment });
+            if (res.status === 201) {
+                // Actualizar rating del departamento en tiempo real
+                setDepartments(prevDepts =>
+                    prevDepts.map(d => {
+                        if (String(d.id) === String(deptId)) {
+                            return { ...d, rating: res.data.review?.stars || d.rating };
+                        }
+                        return d;
+                    })
+                );
+                return { success: true, data: res.data.review };
+            }
+            return { success: false, message: res.data.message || 'Error' };
+        } catch (e) {
+            const msg = e.response?.data?.message || e.message;
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
+    // ===== RESERVATIONS API =====
+    const fetchReservations = async () => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try {
+            const res = await apiClient.get('/reservations');
+            const data = res.data?.data || res.data;
+            const reservationsList = Array.isArray(data) ? data : (data.data || []);
+            setReservations(
+                reservationsList.map(r => ({
+                    id: String(r.id),
+                    deptId: String(r.department_id),
+                    departmentName: r.department?.name || 'N/A',
+                    date: r.reservation_date,
+                    time: r.reservation_time,
+                    duration: r.duration,
+                    status: r.status || 'pending',
+                    amount: r.amount || 0,
+                    paymentMethod: r.payment_method,
+                    notes: r.notes,
+                }))
+            );
+            return { success: true, data: reservationsList };
+        } catch (e) {
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
+    const createReservation = async (deptId, date, time, duration, paymentMethod = null, notes = '') => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try {
+            // Asegurar que deptId es número para validación exists
+            const deptIdNum = parseInt(deptId, 10);
+            const payload = {
+                department_id: deptIdNum,
+                reservation_date: date,
+                reservation_time: time,
+                duration,
+                payment_method: paymentMethod,
+                notes,
+            };
+            console.log('[API] Creating reservation with:', payload);
+            const res = await apiClient.post('/reservations', payload);
+            if (res.status === 201) {
+                const newRes = res.data.reservation;
+                setReservations(prev => [
+                    {
+                        id: String(newRes.id),
+                        deptId: String(newRes.department_id),
+                        departmentName: newRes.department?.name || 'N/A',
+                        date: newRes.reservation_date,
+                        time: newRes.reservation_time,
+                        duration: newRes.duration,
+                        status: newRes.status,
+                        amount: newRes.amount,
+                        paymentMethod: newRes.payment_method,
+                        notes: newRes.notes,
+                    },
+                    ...prev
+                ]);
+                return { success: true, data: newRes };
+            }
+            return { success: false, message: res.data.message || 'Error' };
+        } catch (e) {
+            const errMsg = e.response?.data?.message || e.response?.data?.errors || e.message;
+            console.error('[API] Create reservation error:', errMsg);
+            return { success: false, error: e.response?.data, message: errMsg };
+        }
+    };
+
+    const cancelReservation = async (reservationId) => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try {
+            const res = await apiClient.delete(`/reservations/${reservationId}`);
+            if (res.status >= 200 && res.status < 300) {
+                setReservations(prev => prev.filter(r => String(r.id) !== String(reservationId)));
+                return { success: true };
+            }
+            return { success: false };
+        } catch (e) {
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
+    const getAvailableSlots = async (deptId, date) => {
+        try {
+            const res = await apiClient.get('/reservations/available-slots', {
+                params: { department_id: deptId, date }
+            });
+            return { success: true, slots: res.data.available_slots || [] };
+        } catch (e) {
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
+    // ===== IMAGE UPLOAD =====
+    const apiUploadImages = async (deptId, filesArray) => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        if (!filesArray || filesArray.length === 0) {
+            return { success: false, error: 'No images selected' };
+        }
+        try{
+            const form = new FormData();
+            filesArray.forEach((f, i) => {
+                form.append('images[]', f);
+            });
+            const res = await apiClient.post(`/departments/${deptId}/images`, form, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            if (res.status >= 200 && res.status < 300) {
+                const imageUrls = res.data.images || [];
+                // Actualizar departamento con las nuevas imágenes
+                setDepartments(prevDepts =>
+                    prevDepts.map(d => {
+                        if (String(d.id) === String(deptId)) {
+                            return {
+                                ...d,
+                                images: [...(d.images || []), ...imageUrls]
+                            };
+                        }
+                        return d;
+                    })
+                );
+                return { success: true, images: imageUrls };
+            }
+            return { success: res.status >= 200 && res.status < 300 };
+        }catch(e){ 
+            return { success: false, error: e.response?.data?.message || e.message }; 
+        }
+    };
 
     const [promotions, setPromotions] = useState([
         { id: 'p1', title: '🎉 Descuento Fin de Año', description: '20% de descuento en todas las reservas', discount: 20, code: 'YEAR20', startDate: '2025-12-01', endDate: '2025-12-31', active: true, applicableDepts: ['1', '2', '3'] },
@@ -62,9 +464,7 @@ export function AppProvider({ children }) {
         { id: 'p4', title: '🏖️ Promoción Especial Centro', description: '10% en el departamento Centro', discount: 10, code: 'CENTER10', startDate: '2025-12-15', endDate: '2025-12-25', active: true, applicableDepts: ['1'] },
     ]);
 
-    const [reservations, setReservations] = useState([
-        { id: 'r1', deptId: '1', date: '2025-12-15', time: '10:00', duration: '1h', user: 'johan11gamerez@gmail.com', status: 'confirmed', amount: 45 },
-    ]);
+    const [reservations, setReservations] = useState([]);
 
     // Ganancias mensuales y estadísticas (solo para SuperAdmin)
     const [monthlyEarnings, setMonthlyEarnings] = useState([
@@ -256,13 +656,12 @@ export function AppProvider({ children }) {
     };
 
     // Operational functions (mock implementations using local state)
-    const createDepartment = (name, address, data = {}) => {
+    const createDepartment = async (name, address, data = {}) => {
         if (!canCreateDepartment(user)) return { success: false, message: 'No tienes permisos para crear departamentos.' };
-        const id = (departments.length + 1).toString();
-        const newDept = { 
-            id, 
-            name, 
-            address: address || data.address || '', 
+
+        const localPayload = {
+            name,
+            address: address || data.address || '',
             bedrooms: data.bedrooms || 1,
             pricePerNight: data.pricePerNight || 50,
             description: data.description || '',
@@ -270,6 +669,29 @@ export function AppProvider({ children }) {
             images: data.images || [],
             rating: data.rating || 4.0,
         };
+
+        // Si tenemos un cliente API, intentar persistir en backend
+        try {
+            if (apiClient) {
+                const res = await apiClient.post('/departments', localPayload);
+                const created = res?.data || null;
+                if (created) {
+                    // Asegurar id como string
+                    const dept = { ...created, id: String(created.id || created._id || (Date.now())), };
+                    setDepartments((d) => [...d, dept]);
+                    return { success: true, data: dept };
+                }
+            }
+        } catch (e) {
+            // Si falla por red o permisos, haremos fallback al almacenamiento local
+            // pero retornamos la respuesta del servidor cuando exista
+            const serverErr = e?.response?.data || e.message;
+            // continue to fallback
+        }
+
+        // Fallback local creation cuando no hay backend o falla la petición
+        const id = (departments.length + 1).toString();
+        const newDept = { id, ...localPayload };
         setDepartments((d) => [...d, newDept]);
         return { success: true, data: newDept };
     };
@@ -290,34 +712,57 @@ export function AppProvider({ children }) {
         return { success: true };
     };
 
-    const createReservation = ({ deptId, date, time, duration, paymentMethod, status = 'pending' }) => {
-        if (!canCreateReservation(user)) return { success: false, message: 'No tienes permisos para crear reservas.' };
-        const id = `r${reservations.length + 1}`;
-        
-        // Obtener el departamento para el precio
-        const dept = departments.find(d => d.id === deptId);
-        const amount = dept?.pricePerNight || 0;
-        
-        const newRes = { 
-            id, 
-            deptId, 
-            date, 
-            time, 
-            duration, 
-            user: user?.correo || 'anon', 
-            status: status,
-            paymentMethod: paymentMethod || null,
-            amount: amount,
-            paymentDate: paymentMethod ? new Date().toISOString().split('T')[0] : null,
+    // Polling: refresh user's reservations periodically and show snackbar on changes
+    React.useEffect(() => {
+        let mounted = true;
+        let intervalId = null;
+
+        const fetchReservationsFromServer = async () => {
+            if (!apiClient) return;
+            try {
+                const res = await apiClient.get('/reservations');
+                const data = res?.data?.data || res?.data || [];
+                const mapped = (data || []).map((r) => ({
+                    id: String(r.id),
+                    deptId: String(r.department_id || r.department?.id || r.deptId),
+                    date: r.reservation_date || r.date,
+                    time: r.reservation_time || r.time,
+                    duration: r.duration,
+                    user: r.user?.email || r.user?.correo || 'anon',
+                    status: r.status,
+                    amount: r.amount,
+                }));
+
+                if (!mounted) return;
+
+                setReservations((prev) => {
+                    const prevMap = new Map((prev || []).map(p => [String(p.id), p]));
+                    const messages = [];
+                    mapped.forEach((m) => {
+                        const p = prevMap.get(String(m.id));
+                        if (!p) {
+                            messages.push(`Nueva reserva ${m.date} ${m.time}`);
+                        } else if (p.status !== m.status) {
+                            messages.push(`Reserva ${m.id} cambió a ${m.status}`);
+                        }
+                    });
+                    if (messages.length && typeof showSnackbar === 'function') {
+                        messages.forEach(msg => showSnackbar(msg));
+                    }
+                    return mapped;
+                });
+            } catch (e) {
+                // ignore polling errors
+            }
         };
-        setReservations((r) => [...r, newRes]);
-        // show snackbar if available
-        const message = paymentMethod 
-            ? `Reserva confirmada. Pago procesado con ${paymentMethod}`
-            : 'Reserva creada y en espera de aprobación';
-        if (typeof showSnackbar === 'function') showSnackbar(message);
-        return { success: true, data: newRes };
-    };
+
+        if (user && authToken) {
+            fetchReservationsFromServer();
+            intervalId = setInterval(fetchReservationsFromServer, 15000);
+        }
+
+        return () => { mounted = false; if (intervalId) clearInterval(intervalId); };
+    }, [user, authToken]);
 
     const editReservation = (id, updates) => {
         if (!canEditReservation(user)) return { success: false, message: 'No tienes permisos para editar reservas.' };
@@ -501,6 +946,20 @@ export function AppProvider({ children }) {
                 logout,
                 register,
                 loginWithCredentials,
+                apiLogin,
+                apiRegister,
+                apiLogout,
+                apiToggleFavorite,
+                apiRateDepartment,
+                fetchReviews,
+                submitReview,
+                apiUploadImages,
+                fetchReservations,
+                createReservation,
+                cancelReservation,
+                getAvailableSlots,
+                loadUserProfile,
+                loadUserFavorites,
                 Roles,
                 hasRole,
                 isAdmin,
@@ -512,6 +971,7 @@ export function AppProvider({ children }) {
                 canDeleteDepartment,
                 createDepartment,
                 editDepartment,
+                apiUpdateDepartment,
                 deleteDepartment,
                 canCreateReservation,
                 canEditReservation,
@@ -561,6 +1021,7 @@ export function AppProvider({ children }) {
                 toggleFavorite,
                 isFavorite,
                 getFavoriteDepartments,
+                authToken,
             }}
         >
             {children}

@@ -15,8 +15,9 @@ import DashboardTabs from './src/navigation/DashboardTabs';
 const Stack = createNativeStackNavigator();
 
 function AppInner() {
-  const { isDarkTheme } = useAppContext();
-  const paperTheme = isDarkTheme ? PaperDarkTheme : PaperLightTheme;
+  const { isDarkTheme, paperTheme, user, loadingAuth } = useAppContext();
+  // prefer paperTheme from context when available
+  const resolvedTheme = paperTheme || (isDarkTheme ? PaperDarkTheme : PaperLightTheme);
 
   // Animated overlay for cross-fade between themes
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -29,13 +30,23 @@ function AppInner() {
     ]).start();
   }, [isDarkTheme]);
 
+  // while auth state is loading, render null (or a splash) to avoid flicker
+  if (loadingAuth) return null;
+
   return (
-    <PaperProvider theme={paperTheme}>
+    <PaperProvider theme={resolvedTheme}>
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false, headerStyle: { backgroundColor: paperTheme.colors.topBar }, headerTintColor: paperTheme.colors.onTopBar }}>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="Dashboard" component={DashboardTabs} />
+        <Stack.Navigator screenOptions={{ headerShown: false, headerStyle: { backgroundColor: resolvedTheme.colors.topBar }, headerTintColor: resolvedTheme.colors.onTopBar }}>
+          {!user ? (
+            // auth flow
+            <>
+              <Stack.Screen name="Login" component={LoginScreen} />
+              <Stack.Screen name="Register" component={RegisterScreen} />
+            </>
+          ) : (
+            // protected app
+            <Stack.Screen name="Dashboard" component={DashboardTabs} />
+          )}
         </Stack.Navigator>
       </NavigationContainer>
       <Animated.View pointerEvents="none" style={{
@@ -44,7 +55,7 @@ function AppInner() {
         right: 0,
         top: 0,
         bottom: 0,
-        backgroundColor: paperTheme.colors.background,
+        backgroundColor: resolvedTheme.colors.background,
         opacity: overlayOpacity,
       }} />
 

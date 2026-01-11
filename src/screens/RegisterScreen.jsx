@@ -5,7 +5,7 @@ import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAppContext } from '../context/AppContext';
 
 export default function RegisterScreen({ navigation }) {
-  const { register } = useAppContext();
+  const { register, apiRegister } = useAppContext();
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -63,18 +63,32 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setLoading(false);
-      // Intenta registrar el usuario con validación de correo único
+      
+      // Intentar registrar en el backend primero
+      if (apiRegister) {
+        const apiResult = await apiRegister(nombre, email, password);
+        if (apiResult.success) {
+          alert('Registro exitoso. Por favor inicia sesión con tus datos.');
+          if (navigation) {
+            navigation.navigate('Login');
+          }
+          return;
+        }
+        // Si la llamada al backend respondió con error, mostrarlo y no fallbackear
+        setError(apiResult.message || 'Error al registrar en el servidor');
+        return;
+      }
+
+      // Fallback: registrar localmente si no hay cliente API disponible
       const result = register(nombre, email, password, { telefono, genero });
       if (result.success) {
-        // Registro exitoso, navega al Dashboard
+        alert('Registro exitoso. Por favor inicia sesión con tus datos.');
         if (navigation) {
-          alert("Registro exitoso por favor, inicia sesión con tus datos.");
-          navigation.navigate('LoginScreen');
+          navigation.navigate('Login');
         }
       } else {
-        // Mostrar error si el correo ya existe
         setError(result.message);
       }
     }, 800);
