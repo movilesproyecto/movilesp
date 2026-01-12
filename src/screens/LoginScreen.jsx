@@ -66,228 +66,240 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-    >
-      <ScrollView
-        style={[styles.container, { backgroundColor: theme.colors.background }]}
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: insets.bottom + 20 },
-        ]}
-        keyboardShouldPersistTaps="handled"
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
-        <StatusBar barStyle="light-content" />
-
-        {/* Header decorativo con Safe Area dinámica */}
-        <View
-          style={[
-            styles.headerDecor,
-            {
-              backgroundColor: theme.colors.primary,
-              paddingTop: insets.top + 40,
-            },
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 20 },
           ]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <FontAwesome name="building" size={54} color="white" />
-          <Text style={styles.headerTitle}>DeptBook</Text>
-          <Text style={styles.headerSubtitle}>Gestor de Departamentos</Text>
-        </View>
-
-        {/* Contenedor de la tarjeta con efecto de superposición */}
-        <View style={styles.cardWrapper}>
-          <Card
-            style={[styles.card, { backgroundColor: theme.colors.surface }]}
+          {/* Header decorativo */}
+          <View
+            style={[
+              styles.headerDecor,
+              {
+                backgroundColor: theme.colors.primary,
+                paddingTop: insets.top + (Platform.OS === 'android' ? 30 : 20),
+              },
+            ]}
           >
-            <Card.Content>
-              <Text style={[styles.title, { color: theme.colors.primary }]}>
-                Iniciar sesión
-              </Text>
+            <FontAwesome name="building" size={54} color="white" />
+            <Text style={styles.headerTitle}>DeptBook</Text>
+            <Text style={styles.headerSubtitle}>Gestor de Departamentos</Text>
+          </View>
 
-              {/* Información de usuarios demo mejorada */}
-              <Card
-                style={[
-                  styles.infoCard,
-                  { backgroundColor: theme.colors.surfaceVariant },
-                ]}
-              >
-                <Card.Content>
-                  <View style={styles.infoHeader}>
-                    <FontAwesome
-                      name="info-circle"
-                      size={16}
-                      color={theme.colors.primary}
-                    />
-                    <Text
-                      variant="labelSmall"
-                      style={[
-                        styles.infoTitle,
-                        { color: theme.colors.primary, marginLeft: 8 },
-                      ]}
-                    >
-                      Acceso Rápido (Demo)
-                    </Text>
-                  </View>
-
-                  <View style={styles.userDemo}>
-                    <FontAwesome
-                      name="user"
-                      size={12}
-                      color={theme.colors.secondary}
-                    />
-                    <Text
-                      variant="bodySmall"
-                      style={{ color: theme.colors.onSurface, marginLeft: 8 }}
-                    >
-                      <Text style={{ fontWeight: "bold" }}>Usuario:</Text>{" "}
-                      johan11gamerez@gmail.com
-                    </Text>
-                  </View>
-                  <View style={styles.userDemo}>
-                    <FontAwesome
-                      name="shield"
-                      size={12}
-                      color={theme.colors.warning}
-                    />
-                    <Text
-                      variant="bodySmall"
-                      style={{ color: theme.colors.onSurface, marginLeft: 8 }}
-                    >
-                      <Text style={{ fontWeight: "bold" }}>Admin:</Text>{" "}
-                      admin@demo.com
-                    </Text>
-                  </View>
-                </Card.Content>
-              </Card>
-
-              <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                  Correo Electrónico
+          {/* Formulario */}
+          <View style={styles.cardWrapper}>
+            <Card
+              style={[styles.card, { backgroundColor: theme.colors.surface }]}
+              mode="elevated"
+            >
+              <Card.Content>
+                <Text style={[styles.title, { color: theme.colors.primary }]}>
+                  Iniciar sesión
                 </Text>
-                <TextInput
-                  label="Email"
-                  mode="outlined"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  returnKeyType="next"
-                  left={
-                    <TextInput.Icon icon="email" color={theme.colors.primary} />
-                  }
-                  outlineColor={theme.colors.outline}
-                />
-                {email.length > 0 && !validateEmail(email) && (
-                  <View style={styles.errorContainer}>
-                    <FontAwesome
-                      name="exclamation-circle"
-                      size={14}
-                      color={theme.colors.error}
-                    />
-                    <Text
-                      style={[
-                        styles.fieldError,
-                        { color: theme.colors.error, marginLeft: 6 },
-                      ]}
-                    >
-                      Formato de correo inválido
-                    </Text>
-                  </View>
-                )}
-              </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
-                  Contraseña
-                </Text>
-                <TextInput
-                  label="Password"
-                  mode="outlined"
-                  secureTextEntry
-                  value={password}
-                  onChangeText={setPassword}
-                  autoCapitalize="none"
-                  left={
-                    <TextInput.Icon icon="lock" color={theme.colors.primary} />
-                  }
-                  outlineColor={theme.colors.outline}
-                />
-                {password.length > 0 && password.length < 6 && (
-                  <View style={styles.errorContainer}>
-                    <FontAwesome
-                      name="exclamation-circle"
-                      size={14}
-                      color={theme.colors.error}
-                    />
-                    <Text
-                      style={[
-                        styles.fieldError,
-                        { color: theme.colors.error, marginLeft: 6 },
-                      ]}
-                    >
-                      Mínimo 6 caracteres
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              <Button
-                mode="contained"
-                loading={loading}
-                disabled={!isFormValid || loading}
-                onPress={handleLogin}
-                style={styles.button}
-                contentStyle={styles.buttonContent}
-              >
-                {loading ? "Verificando..." : "Ingresar"}
-              </Button>
-
-              <View style={styles.divider}>
-                <View
+                <Card
                   style={[
-                    styles.dividerLine,
-                    { backgroundColor: theme.colors.outline },
-                  ]}
-                />
-                <Text
-                  style={[
-                    styles.dividerText,
-                    { color: theme.colors.placeholder },
+                    styles.infoCard,
+                    { backgroundColor: theme.colors.surfaceVariant },
                   ]}
                 >
-                  O registrarse
-                </Text>
-                <View
-                  style={[
-                    styles.dividerLine,
-                    { backgroundColor: theme.colors.outline },
-                  ]}
-                />
-              </View>
+                  <Card.Content>
+                    <View style={styles.infoHeader}>
+                      <FontAwesome
+                        name="info-circle"
+                        size={16}
+                        color={theme.colors.primary}
+                      />
+                      <Text
+                        variant="labelSmall"
+                        style={[
+                          styles.infoTitle,
+                          { color: theme.colors.primary, marginLeft: 8 },
+                        ]}
+                      >
+                        Acceso Rápido (Demo)
+                      </Text>
+                    </View>
 
-              <Button
-                mode="outlined"
-                onPress={() => navigation.push("Register")}
-                style={styles.registerButton}
-                labelStyle={{ color: theme.colors.primary }}
-              >
-                Crear Nueva Cuenta
-              </Button>
-            </Card.Content>
-          </Card>
-        </View>
+                    <View style={styles.userDemo}>
+                      <FontAwesome
+                        name="user"
+                        size={12}
+                        color={theme.colors.secondary}
+                      />
+                      <Text
+                        variant="bodySmall"
+                        style={{ color: theme.colors.onSurface, marginLeft: 8 }}
+                      >
+                        <Text style={{ fontWeight: "bold" }}>Usuario:</Text>{" "}
+                        johan11gamerez@gmail.com
+                      </Text>
+                    </View>
+                    <View style={styles.userDemo}>
+                      <FontAwesome
+                        name="shield"
+                        size={12}
+                        color={theme.colors.warning}
+                      />
+                      <Text
+                        variant="bodySmall"
+                        style={{ color: theme.colors.onSurface, marginLeft: 8 }}
+                      >
+                        <Text style={{ fontWeight: "bold" }}>Admin:</Text>{" "}
+                        admin@demo.com
+                      </Text>
+                    </View>
+                  </Card.Content>
+                </Card>
 
-        <Snackbar
-          visible={!!error}
-          onDismiss={() => setError("")}
-          duration={3000}
-          style={[styles.snackbar, { backgroundColor: theme.colors.error }]}
-        >
-          {error}
-        </Snackbar>
-      </ScrollView>
-    </KeyboardAvoidingView>
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
+                    Correo Electrónico
+                  </Text>
+                  <TextInput
+                    label="Email"
+                    mode="outlined"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    returnKeyType="next"
+                    left={
+                      <TextInput.Icon icon="email" color={theme.colors.primary} />
+                    }
+                    outlineColor={theme.colors.outline}
+                  />
+                  {email.length > 0 && !validateEmail(email) && (
+                    <View style={styles.errorContainer}>
+                      <FontAwesome
+                        name="exclamation-circle"
+                        size={14}
+                        color={theme.colors.error}
+                      />
+                      <Text
+                        style={[
+                          styles.fieldError,
+                          { color: theme.colors.error, marginLeft: 6 },
+                        ]}
+                      >
+                        Formato de correo inválido
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
+                    Contraseña
+                  </Text>
+                  <TextInput
+                    label="Password"
+                    mode="outlined"
+                    secureTextEntry
+                    value={password}
+                    onChangeText={setPassword}
+                    autoCapitalize="none"
+                    left={
+                      <TextInput.Icon icon="lock" color={theme.colors.primary} />
+                    }
+                    outlineColor={theme.colors.outline}
+                  />
+                  {password.length > 0 && password.length < 6 && (
+                    <View style={styles.errorContainer}>
+                      <FontAwesome
+                        name="exclamation-circle"
+                        size={14}
+                        color={theme.colors.error}
+                      />
+                      <Text
+                        style={[
+                          styles.fieldError,
+                          { color: theme.colors.error, marginLeft: 6 },
+                        ]}
+                      >
+                        Mínimo 6 caracteres
+                      </Text>
+                    </View>
+                  )}
+                </View>
+
+                <Button
+                  mode="contained"
+                  loading={loading}
+                  disabled={!isFormValid || loading}
+                  onPress={handleLogin}
+                  style={styles.button}
+                  contentStyle={styles.buttonContent}
+                >
+                  {loading ? "Verificando..." : "Ingresar"}
+                </Button>
+
+                <View style={styles.divider}>
+                  <View
+                    style={[
+                      styles.dividerLine,
+                      { backgroundColor: theme.colors.outline },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.dividerText,
+                      { color: theme.colors.placeholder },
+                    ]}
+                  >
+                    O registrarse
+                  </Text>
+                  <View
+                    style={[
+                      styles.dividerLine,
+                      { backgroundColor: theme.colors.outline },
+                    ]}
+                  />
+                </View>
+
+                <Button
+                  mode="outlined"
+                  onPress={() => navigation.push("Register")}
+                  style={styles.registerButton}
+                  labelStyle={{ color: theme.colors.primary }}
+                >
+                  Crear Nueva Cuenta
+                </Button>
+              </Card.Content>
+            </Card>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* CORRECCIÓN AQUÍ: 
+        El Snackbar ahora está FUERA del ScrollView y del KeyboardAvoidingView.
+        Es hijo directo del View principal, con zIndex alto para asegurar que flote encima.
+      */}
+      <Snackbar
+        visible={!!error}
+        onDismiss={() => setError("")}
+        duration={3000}
+        style={[styles.snackbar, { backgroundColor: theme.colors.error }]}
+        wrapperStyle={{ zIndex: 9999, elevation: 9999 }} // Asegura que esté al frente
+      >
+        {error}
+      </Snackbar>
+    </View>
   );
 }
 
@@ -305,6 +317,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 5,
+    zIndex: 1,
   },
   headerTitle: {
     fontSize: 32,
@@ -314,10 +327,10 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: 16,
-    color: "rgba(255,255,255,0.8)",
+    color: "rgba(255,255,255,0.9)",
     marginTop: 4,
   },
-  cardWrapper: { paddingHorizontal: 20, marginTop: -40 },
+  cardWrapper: { paddingHorizontal: 20, marginTop: -40, zIndex: 2 },
   card: {
     borderRadius: 20,
     elevation: 4,
@@ -367,5 +380,9 @@ const styles = StyleSheet.create({
   dividerLine: { flex: 1, height: 1 },
   dividerText: { marginHorizontal: 12, fontSize: 12, fontWeight: "500" },
   registerButton: { borderRadius: 12, borderWidth: 1.5 },
-  snackbar: { borderRadius: 8, marginHorizontal: 16 },
+  snackbar: { 
+    borderRadius: 8, 
+    marginHorizontal: 16,
+    marginBottom: 20 
+  },
 });
