@@ -1,12 +1,16 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 // IMPORTANTE: agrega /api
-const API_URL = "http://TU_IP_O_DOMINIO/api";
+const API_URL = "https://overfavorable-romeo-unrightful.ngrok-free.dev/api";
+console.log("---------------------------------------------------");
+console.log(">>> URL QUE ESTÁ USANDO LA APP:", API_URL); 
+console.log("---------------------------------------------------");
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
     Accept: "application/json",
     "Content-Type": "application/json",
+    'ngrok-skip-browser-warning': 'true'
   },
 });
 

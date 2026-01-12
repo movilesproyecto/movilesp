@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
-import { TextInput, Button, Text, Snackbar, Card, useTheme, RadioButton } from 'react-native-paper';
+import { View, StyleSheet, Platform, KeyboardAvoidingView, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import { TextInput, Button, Text, Snackbar, Card, useTheme } from 'react-native-paper';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAppContext } from '../context/AppContext';
 
@@ -15,7 +15,6 @@ export default function RegisterScreen({ navigation }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  // Nuevo estado para la visibilidad de la contraseña
   const [showPassword, setShowPassword] = useState(false);
 
   const theme = useTheme();
@@ -66,7 +65,6 @@ export default function RegisterScreen({ navigation }) {
     setTimeout(async () => {
       setLoading(false);
       
-      // Intentar registrar en el backend primero
       if (apiRegister) {
         const apiResult = await apiRegister(nombre, email, password);
         if (apiResult.success) {
@@ -76,12 +74,10 @@ export default function RegisterScreen({ navigation }) {
           }
           return;
         }
-        // Si la llamada al backend respondió con error, mostrarlo y no fallbackear
         setError(apiResult.message || 'Error al registrar en el servidor');
         return;
       }
 
-      // Fallback: registrar localmente si no hay cliente API disponible
       const result = register(nombre, email, password, { telefono, genero });
       if (result.success) {
         alert('Registro exitoso. Por favor inicia sesión con tus datos.');
@@ -95,14 +91,17 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {/* KeyboardAvoidingView asegura que el teclado no tape el formulario */}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar 
+        barStyle={theme.dark ? "light-content" : "dark-content"} 
+        backgroundColor={theme.colors.background} 
+      />
+
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* Header decorativo */}
           <View style={[styles.headerDecor, { backgroundColor: theme.colors.secondary }]}>
             <FontAwesome name="user-plus" size={44} color="white" />
             <Text style={styles.headerTitle}>Crear Cuenta</Text>
@@ -239,32 +238,36 @@ export default function RegisterScreen({ navigation }) {
 
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: theme.colors.text }]}>Género</Text>
-                <View style={[styles.genderCard, { backgroundColor: theme.colors.surfaceVariant, borderColor: theme.colors.outline }]}>
-                  <RadioButton.Group onValueChange={setGenero} value={genero}>
-                    <View style={styles.radioGroup}>
-                      <View style={styles.radioItem}>
-                        <RadioButton 
-                          value="male"
-                          color={theme.colors.primary}
-                        />
-                        <Text style={[{ marginLeft: 8, color: theme.colors.text }]}>👨 Masculino</Text>
-                      </View>
-                      <View style={styles.radioItem}>
-                        <RadioButton 
-                          value="female"
-                          color={theme.colors.primary}
-                        />
-                        <Text style={[{ marginLeft: 8, color: theme.colors.text }]}>👩 Femenino</Text>
-                      </View>
-                      <View style={styles.radioItem}>
-                        <RadioButton 
-                          value="other"
-                          color={theme.colors.primary}
-                        />
-                        <Text style={[{ marginLeft: 8, color: theme.colors.text }]}>🤝 Otro</Text>
-                      </View>
-                    </View>
-                  </RadioButton.Group>
+                <View style={styles.genderRow}>
+                  <Button 
+                    mode={genero === 'male' ? "contained" : "outlined"}
+                    onPress={() => setGenero('male')}
+                    style={styles.genderBtn}
+                    labelStyle={{ fontSize: 11, marginHorizontal: 2 }}
+                    compact={true}
+                  >
+                    👨 Masculino
+                  </Button>
+                  
+                  <Button 
+                    mode={genero === 'female' ? "contained" : "outlined"}
+                    onPress={() => setGenero('female')}
+                    style={styles.genderBtn}
+                    labelStyle={{ fontSize: 11, marginHorizontal: 2 }}
+                    compact={true}
+                  >
+                    👩 Femenino
+                  </Button>
+
+                  <Button 
+                    mode={genero === 'other' ? "contained" : "outlined"}
+                    onPress={() => setGenero('other')}
+                    style={styles.genderBtn}
+                    labelStyle={{ fontSize: 11, marginHorizontal: 2 }}
+                    compact={true}
+                  >
+                    🤝 Otro
+                  </Button>
                 </View>
               </View>
 
@@ -275,7 +278,8 @@ export default function RegisterScreen({ navigation }) {
                 onPress={handleRegister}
                 style={[styles.button, { backgroundColor: theme.colors.primary }]}
                 contentStyle={styles.buttonContent}
-                labelStyle={styles.buttonLabel}
+                // AQUI ESTÁ EL CAMBIO: Forzamos el color blanco para asegurar legibilidad
+                labelStyle={[styles.buttonLabel, { color: '#FFFFFF' }]}
               >
                 {loading ? 'Registrando...' : 'Registrarse'}
               </Button>
@@ -307,13 +311,14 @@ export default function RegisterScreen({ navigation }) {
       >
         <Text style={{ color: '#FFFFFF' }}>{error}</Text>
       </Snackbar>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scrollContent: {
     flexGrow: 1,
@@ -383,20 +388,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
-  genderCard: {
-    borderRadius: 10,
-    borderWidth: 1,
-    padding: 12,
-  },
-  radioGroup: {
+  genderRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  radioItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
+  genderBtn: {
+    flex: 1,
+    borderRadius: 8,
+    marginHorizontal: 2,
   },
   button: {
     marginTop: 20,
