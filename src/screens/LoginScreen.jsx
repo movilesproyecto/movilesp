@@ -18,6 +18,7 @@ import {
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../context/AppContext";
+import apiClient from "../services/apiClient";
 
 export default function LoginScreen({ navigation }) {
   const { loginWithCredentials } = useAppContext();
