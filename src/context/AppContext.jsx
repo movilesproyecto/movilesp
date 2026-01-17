@@ -124,6 +124,29 @@ export function AppProvider({ children }) {
         }
     };
 
+    // Función para cargar departamentos desde la API
+    const fetchDepartments = async () => {
+        try {
+            const res = await apiClient.get('/departments');
+            const data = res?.data?.data || res?.data;
+            if (!data) return;
+            const depts = Array.isArray(data) ? data : (data.data || []);
+            setDepartments((depts || []).map(d => ({
+                id: String(d.id),
+                name: d.name || '',
+                address: d.address || '',
+                bedrooms: d.bedrooms ?? 1,
+                pricePerNight: (d.price_per_night || d.pricePerNight) ?? 50,
+                rating: (d.rating_avg || d.rating) ?? 4.0,
+                description: d.description || '',
+                amenities: d.amenities || [],
+                images: d.images || [],
+            })));
+        } catch (e) {
+            console.error('[DEPARTMENTS] Error fetching:', e.message);
+        }
+    };
+
     useEffect(() => {
         // Cargar perfil y favoritos cuando el usuario se autentica
         if (authToken && user) {
@@ -973,6 +996,7 @@ export function AppProvider({ children }) {
                 editDepartment,
                 apiUpdateDepartment,
                 deleteDepartment,
+                fetchDepartments,
                 canCreateReservation,
                 canEditReservation,
                 canDeleteReservation,

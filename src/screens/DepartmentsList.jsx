@@ -1,13 +1,14 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ScrollView, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { FAB, useTheme, Searchbar, Button as PaperButton, TextInput, ActivityIndicator, Collapse } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export default function DepartmentsList({ navigation }) {
   const theme = useTheme();
-  const { user, canCreateDepartment, canEditDepartment, departments, isFavorite, toggleFavorite, apiToggleFavorite, getPromotionsByDept } = useAppContext();
+  const { user, canCreateDepartment, canEditDepartment, departments, isFavorite, toggleFavorite, apiToggleFavorite, getPromotionsByDept, fetchDepartments } = useAppContext();
   const insets = useSafeAreaInsets();
   const [sortBy, setSortBy] = useState('none');
   const [page, setPage] = useState(1);
@@ -19,6 +20,13 @@ export default function DepartmentsList({ navigation }) {
   const [bedroomsFilter, setBedroomsFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
+  // Refrescar cuando la pantalla se enfoca
+  useFocusEffect(
+    React.useCallback(() => {
+      setPage(1);
+      fetchDepartments();
+    }, [fetchDepartments])
+  );
   const renderItem = ({ item }) => {
     const favorited = isFavorite(item.id);
     const promotions = getPromotionsByDept(item.id);

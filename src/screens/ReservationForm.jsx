@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, TextInput, Alert, Picker } from 'react-native';
+import { View, ScrollView, StyleSheet, TextInput, Alert } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useTheme, Text, Button, Card } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 
 export default function ReservationForm({ route, navigation }) {
   const preDept = route?.params?.department;
   const theme = useTheme();
-  const { user, canCreateReservation, departments } = useAppContext();
-  const [dept, setDept] = useState(preDept ? preDept.id : (departments && departments[0] ? departments[0].id : null));
+  const { user, canCreateReservation, departments = [], reservations = [], reservation } = useAppContext();
+  const [dept, setDept] = useState(preDept ? preDept.id : (departments && departments.length > 0 ? departments[0].id : null));
   const [date, setDate] = useState('2025-12-20');
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState('1h');
@@ -25,6 +26,34 @@ export default function ReservationForm({ route, navigation }) {
       Alert.alert('Acceso denegado', 'No puedes crear reservas.'); 
       navigation.goBack(); 
       return; 
+    }
+
+    // Validar que no exista una reserva del mismo usuario en el mismo departamento y fecha
+    const yaReservado = reservations.some(res => 
+      res.deptId === dept && res.date === date && (res.status === 'confirmed' || res.status === 'approved')
+    );
+
+    if (yaReservado) {
+      Alert.alert(
+        'Departamento no disponible',
+        'Ya tienes una reserva confirmada para este departamento en esta fecha. Por favor, elige otro día o departamento.',
+        [{ text: 'Entendido' }]
+      );
+      return;
+    }
+
+    // Validar que el departamento no esté reservado en el mismo horario
+    const conflictoHorario = reservations.some(res =>
+      res.deptId === dept && res.date === date && res.time === time && (res.status === 'confirmed' || res.status === 'approved')
+    );
+
+    if (conflictoHorario) {
+      Alert.alert(
+        'Horario no disponible',
+        'Este departamento ya está reservado en esa fecha y hora. Por favor, elige otro horario.',
+        [{ text: 'Entendido' }]
+      );
+      return;
     }
 
     // Obtener el departamento seleccionado para pasar a la pantalla de pago
@@ -54,13 +83,19 @@ export default function ReservationForm({ route, navigation }) {
       <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
         <Card.Content>
           <Text style={[styles.label, { color: theme.colors.text }]}>Departamento</Text>
-          <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>
-            <Picker selectedValue={dept} onValueChange={(v) => setDept(v)}>
-              {(departments || []).map((d) => (
-                <Picker.Item key={d.id} label={`${d.name}`} value={d.id} />
-              ))}
-            </Picker>
-          </View>
+          {departments && departments.length > 0 ? (
+            <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>
+              <Picker selectedValue={dept} onValueChange={(v) => setDept(v)}>
+                {departments.map((d) => (
+                  <Picker.Item key={d.id} label={`${d.name}`} value={d.id} />
+                ))}
+              </Picker>
+            </View>
+          ) : (
+            <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>
+              <Text style={{ padding: 12, color: theme.colors.disabled }}>Cargando departamentos...</Text>
+            </View>
+          )}
 
           <Text style={[styles.label, { color: theme.colors.text, marginTop: 16 }]}>Fecha (YYYY-MM-DD)</Text>
           <TextInput style={[styles.input, { borderColor: theme.colors.outline }]} value={date} onChangeText={setDate} placeholder="2025-12-20" />

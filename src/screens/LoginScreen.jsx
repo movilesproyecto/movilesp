@@ -20,7 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../context/AppContext";
 
 export default function LoginScreen({ navigation }) {
-  const { loginWithCredentials } = useAppContext();
+  const { apiLogin } = useAppContext();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,7 +36,7 @@ export default function LoginScreen({ navigation }) {
 
   const isFormValid = validateEmail(email) && password.length >= 6;
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       setError("Todos los campos son obligatorios.");
       return;
@@ -51,18 +51,14 @@ export default function LoginScreen({ navigation }) {
     }
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      const result = loginWithCredentials(email, password);
-      if (result.success) {
-        setError("");
-        if (navigation && typeof navigation.replace === "function") {
-          navigation.replace("Dashboard");
-        }
-      } else {
-        setError(result.message || "Error al iniciar sesión.");
-      }
-    }, 800);
+    const result = await apiLogin(email, password);
+    setLoading(false);
+    if (result.success) {
+      setError("");
+      // El cambio en el estado del usuario dispara automáticamente el cambio de navigator
+    } else {
+      setError(result.message || "Error al iniciar sesión.");
+    }
   };
 
   return (
@@ -104,62 +100,6 @@ export default function LoginScreen({ navigation }) {
               <Text style={[styles.title, { color: theme.colors.primary }]}>
                 Iniciar sesión
               </Text>
-
-              {/* Información de usuarios demo mejorada */}
-              <Card
-                style={[
-                  styles.infoCard,
-                  { backgroundColor: theme.colors.surfaceVariant },
-                ]}
-              >
-                <Card.Content>
-                  <View style={styles.infoHeader}>
-                    <FontAwesome
-                      name="info-circle"
-                      size={16}
-                      color={theme.colors.primary}
-                    />
-                    <Text
-                      variant="labelSmall"
-                      style={[
-                        styles.infoTitle,
-                        { color: theme.colors.primary, marginLeft: 8 },
-                      ]}
-                    >
-                      Acceso Rápido (Demo)
-                    </Text>
-                  </View>
-
-                  <View style={styles.userDemo}>
-                    <FontAwesome
-                      name="user"
-                      size={12}
-                      color={theme.colors.secondary}
-                    />
-                    <Text
-                      variant="bodySmall"
-                      style={{ color: theme.colors.onSurface, marginLeft: 8 }}
-                    >
-                      <Text style={{ fontWeight: "bold" }}>Usuario:</Text>{" "}
-                      johan11gamerez@gmail.com
-                    </Text>
-                  </View>
-                  <View style={styles.userDemo}>
-                    <FontAwesome
-                      name="shield"
-                      size={12}
-                      color={theme.colors.warning}
-                    />
-                    <Text
-                      variant="bodySmall"
-                      style={{ color: theme.colors.onSurface, marginLeft: 8 }}
-                    >
-                      <Text style={{ fontWeight: "bold" }}>Admin:</Text>{" "}
-                      admin@demo.com
-                    </Text>
-                  </View>
-                </Card.Content>
-              </Card>
 
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: theme.colors.text }]}>
@@ -339,8 +279,32 @@ const styles = StyleSheet.create({
     borderLeftWidth: 5,
     borderLeftColor: "#3a21cc",
   },
-  infoHeader: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  infoHeader: { flexDirection: "row", alignItems: "center", marginBottom: 12 },
   infoTitle: { fontSize: 13, fontWeight: "700" },
+  demoUserContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingLeft: 12,
+    borderLeftWidth: 4,
+    paddingVertical: 10,
+    paddingRight: 12,
+    backgroundColor: "rgba(0,0,0,0.02)",
+    borderRadius: 8,
+  },
+  demoUserIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    backgroundColor: "#3a21cc",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 12,
+  },
+  demoUserLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
   userDemo: {
     flexDirection: "row",
     alignItems: "center",

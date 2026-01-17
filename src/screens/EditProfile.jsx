@@ -30,12 +30,23 @@ export default function EditProfile({ navigation }) {
       return;
     }
 
-    // Update local context (registeredUsers + session)
-    const res = updateUserProfile(user.correo, { nombre, correo, telefono, departamento, bio, genero });
-    if (res.success) {
+    try {
+      // Update local context
+      if (setUser) {
+        setUser({
+          ...user,
+          nombre,
+          correo,
+          telefono,
+          departamento,
+          bio,
+          genero
+        });
+      }
       Alert.alert('OK', 'Perfil actualizado');
       navigation.goBack();
-    } else {
+    } catch (error) {
+      console.log('Error saving profile:', error);
       Alert.alert('Error', 'No se pudo actualizar el perfil.');
     }
   };
