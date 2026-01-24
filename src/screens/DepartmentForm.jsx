@@ -9,7 +9,7 @@ import ImageCarousel from '../components/ImageCarousel';
 export default function DepartmentForm({ route, navigation }) {
   const dept = route?.params?.department;
   const theme = useTheme();
-  const { user, canCreateDepartment, canEditDepartment, createDepartment, editDepartment, apiUpdateDepartment, apiUploadImages } = useAppContext();
+  const { user, canCreateDepartment, canEditDepartment, createDepartment, editDepartment, apiUpdateDepartment, apiUploadImages, apiClient } = useAppContext();
   
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -79,17 +79,34 @@ export default function DepartmentForm({ route, navigation }) {
   const uploadImageToBackend = async (deptId, imageUri) => {
     setUploading(true);
     try {
-      // Convertir URI local a blob para envío
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      const file = new File([blob], 'image.jpg', { type: 'image/jpeg' });
+      const formData = new FormData();
       
-      const result = await apiUploadImages(deptId, [file]);
-      if (result.success) {
-        setImages(prev => [...prev, ...result.images]);
+      const uriParts = imageUri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      
+      formData.append('image', {
+        uri: imageUri,
+        type: `image/${fileType === 'jpg' ? 'jpeg' : fileType}`,
+        name: `image_${Date.now()}.${fileType}`,
+      });
+      
+      // Usar nuevo endpoint para binarios
+      const response = await apiClient.post(
+        `/departments/${deptId}/upload-image-binary`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+      
+      if (response.data?.success) {
         Alert.alert('Éxito', 'Imagen subida correctamente');
+        // Actualizar el departamento local
+        setImages([response.data.data.image_base64]);
       } else {
-        Alert.alert('Error', result.error?.message || 'No se pudo subir la imagen');
+        Alert.alert('Error', response.data?.message || 'No se pudo subir la imagen');
       }
     } catch (e) {
       Alert.alert('Error', 'Error al subir imagen: ' + e.message);
@@ -171,12 +188,13 @@ export default function DepartmentForm({ route, navigation }) {
     }
 
     const data = {
-      name,
-      address,
+      name: name.trim(),
+      address: address.trim(),
       bedrooms: bedroomsNum,
       pricePerNight: priceNum,
-      description,
-      amenities,
+      description: description.trim(),
+      amenities: amenities || [],
+      images: images || [], // Guardar URLs directamente
     };
 
     if (dept) {
@@ -185,13 +203,29 @@ export default function DepartmentForm({ route, navigation }) {
         navigation.goBack();
         return;
       }
-      // Use API to update on backend
+      // Actualizar departamento con las imágenes incluidas
+      console.log('[DepartmentForm] Updating department:', dept.id, data);
       const result = await apiUpdateDepartment(dept.id, data);
+      console.log('[DepartmentForm] Update result:', result);
       if (result.success) {
-        Alert.alert('Guardado', 'Departamento actualizado.');
-        navigation.navigate('Departamentos');
+        Alert.alert('Éxito', 'Departamento actualizado correctamente.');
+        navigation.goBack();
       } else {
-        Alert.alert('Error', result.message || 'No se pudo actualizar el departamento.');
+        let errorMsg = result.message || 'No se pudo actualizar el departamento.';
+        if (result.statusCode === 401) {
+          errorMsg = 'No estás autenticado. Por favor inicia sesión nuevamente.';
+        } else if (result.statusCode === 403) {
+          errorMsg = 'No tienes permisos para actualizar este departamento. Solo administradores pueden hacerlo.';
+        } else if (result.statusCode === 422) {
+          if (result.error?.errors) {
+            const validationErrors = Object.values(result.error.errors)
+              .flat()
+              .join('\n');
+            errorMsg = 'Error de validación:\n' + validationErrors;
+          }
+        }
+        console.error('[DepartmentForm] Update error:', errorMsg, result);
+        Alert.alert('Error', errorMsg);
       }
     } else {
       if (!canCreateDepartment(user)) {
@@ -199,11 +233,11 @@ export default function DepartmentForm({ route, navigation }) {
         navigation.goBack();
         return;
       }
-      // Use API to create on backend
+      // Crear departamento con las imágenes incluidas
       const result = await createDepartment(name, address, data);
       if (result.success) {
         Alert.alert('Creado', 'Departamento creado correctamente.');
-        navigation.navigate('Departamentos');
+        navigation.goBack();
       } else {
         Alert.alert('Error', result.message || 'No se pudo crear el departamento.');
       }

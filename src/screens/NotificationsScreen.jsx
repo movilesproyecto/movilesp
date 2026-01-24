@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -9,6 +9,7 @@ import {
   Dimensions,
   StatusBar, // Importado para el fix
   Platform, // Importado para el fix
+  ActivityIndicator,
 } from "react-native";
 import {
   Card,
@@ -20,93 +21,47 @@ import {
   Chip,
 } from "react-native-paper";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
+import { useAppContext } from "../context/AppContext";
 
 const NotificationsScreen = ({ navigation }) => {
   const theme = useTheme();
+  const { notifications, unreadCount, fetchNotifications, markNotificationAsRead, markAllNotificationsAsRead, deleteNotification, deleteAllNotifications, authToken } = useAppContext();
+  const [loading, setLoading] = useState(false);
+  const [filterType, setFilterType] = useState(null);
   const styles = useMemo(() => createStyles(theme), [theme]);
 
-  const [notificationsData, setNotificationsData] = useState([
-    {
-      id: 1,
-      title: "Reserva Confirmada",
-      message: "Tu reserva en Departamento Premium ha sido confirmada",
-      timestamp: "Hace 2 horas",
-      type: "success",
-      icon: "check-circle",
-      read: false,
-      departmentId: 1,
-    },
-    {
-      id: 2,
-      title: "Nueva Disponibilidad",
-      message: "El departamento que te interesaba ahora está disponible",
-      timestamp: "Hace 5 horas",
-      type: "info",
-      icon: "bell",
-      read: false,
-      departmentId: 2,
-    },
-    {
-      id: 3,
-      title: "Pago Recibido",
-      message: "Tu pago de $150,000 ha sido procesado correctamente",
-      timestamp: "Hace 1 día",
-      type: "success",
-      icon: "check-circle",
-      read: true,
-      departmentId: null,
-    },
-    {
-      id: 4,
-      title: "Recordatorio de Reserva",
-      message: "Tu reserva vence en 3 días. Recuerda confirmar tu llegada",
-      timestamp: "Hace 2 días",
-      type: "warning",
-      icon: "exclamation-circle",
-      read: true,
-      departmentId: 1,
-    },
-    {
-      id: 5,
-      title: "Reseña Completada",
-      message: "Completa una reseña del departamento donde te hospedaste",
-      timestamp: "Hace 3 días",
-      type: "info",
-      icon: "star",
-      read: true,
-      departmentId: 3,
-    },
-  ]);
+  // Cargar notificaciones al abrir la pantalla
+  useEffect(() => {
+    loadNotifications();
+  }, []);
 
-  const [filterType, setFilterType] = useState(null);
+  const loadNotifications = async () => {
+    if (!authToken) return;
+    setLoading(true);
+    await fetchNotifications();
+    setLoading(false);
+  };
 
   const handleBack = () => {
     navigation.goBack();
   };
 
   // Marcar notificación como leída
-  const markAsRead = (id) => {
-    setNotificationsData(
-      notificationsData.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
+  const markAsRead = async (id) => {
+    await markNotificationAsRead(id);
   };
 
   // Marcar todas como leídas
-  const markAllAsRead = () => {
-    setNotificationsData(notificationsData.map((n) => ({ ...n, read: true })));
+  const markAllAsRead = async () => {
+    await markAllNotificationsAsRead();
     Alert.alert(
       "Éxito",
       "Todas las notificaciones han sido marcadas como leídas"
     );
   };
 
-  // Eliminar notificación
-  const deleteNotification = (id) => {
-    setNotificationsData(notificationsData.filter((n) => n.id !== id));
-  };
-
   // Limpiar todas las notificaciones
-  const clearAllNotifications = () => {
+  const clearAllNotifications = async () => {
     Alert.alert(
       "Eliminar todas",
       "¿Estás seguro de que deseas eliminar todas las notificaciones?",
@@ -114,8 +69,8 @@ const NotificationsScreen = ({ navigation }) => {
         { text: "Cancelar", style: "cancel" },
         {
           text: "Eliminar",
-          onPress: () => {
-            setNotificationsData([]);
+          onPress: async () => {
+            await deleteAllNotifications();
             Alert.alert(
               "Éxito",
               "Todas las notificaciones han sido eliminadas"
@@ -128,22 +83,21 @@ const NotificationsScreen = ({ navigation }) => {
   };
 
   // Manejar click en notificación
-  const handleNotificationPress = (notification) => {
-    markAsRead(notification.id);
+  const handleNotificationPress = async (notification) => {
+    await markAsRead(notification.id);
 
-    if (notification.departmentId) {
+    if (notification.department_id) {
       navigation.navigate("DepartmentDetail", {
-        department: { id: notification.departmentId },
+        department: { id: notification.department_id },
       });
     }
   };
 
   // Filtrar notificaciones
   const filteredNotifications = filterType
-    ? notificationsData.filter((n) => n.type === filterType)
-    : notificationsData;
+    ? notifications.filter((n) => n.type === filterType)
+    : notifications;
 
-  const unreadCount = notificationsData.filter((n) => !n.read).length;
   const types = ["success", "warning", "info", "error"];
 
   const getTypeLabel = (type) => {
@@ -201,9 +155,26 @@ const NotificationsScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 20 }}
       >
-        {/* Filtros - RESTAURADO VISUALMENTE */}
-        {notificationsData.length > 0 && (
-          <View style={styles.filterContainer}>
+        {loading ? (
+          <View style={[styles.centerContainer, { marginTop: 100 }]}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={{ marginTop: 10, color: theme.colors.text }}>Cargando notificaciones...</Text>
+          </View>
+        ) : notifications.length === 0 ? (
+          <View style={[styles.emptyContainer, { marginTop: 100 }]}>
+            <FontAwesome name="inbox" size={64} color={theme.colors.disabled} />
+            <Text style={{ fontSize: 18, color: theme.colors.text, marginTop: 20 }}>
+              Sin notificaciones
+            </Text>
+            <Text style={{ fontSize: 14, color: theme.colors.disabled, marginTop: 10, textAlign: 'center' }}>
+              Cuando tengas notificaciones nuevas aparecerán aquí
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Filtros - RESTAURADO VISUALMENTE */}
+            {notifications.length > 0 && (
+              <View style={styles.filterContainer}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -232,15 +203,15 @@ const NotificationsScreen = ({ navigation }) => {
                   {getTypeLabel(type)}
                 </Chip>
               ))}
-            </ScrollView>
-          </View>
-        )}
+                </ScrollView>
+              </View>
+            )}
 
-        {/* Botones de acción - RESTAURADO VISUALMENTE */}
-        {notificationsData.length > 0 && (
-          <View style={styles.actionButtons}>
+            {/* Botones de acción - RESTAURADO VISUALMENTE */}
+            {notifications.length > 0 && (
+              <View style={styles.actionButtons}>
             {unreadCount > 0 && (
-              <Button
+                <Button
                 mode="outlined"
                 size="small"
                 onPress={markAllAsRead}
@@ -250,7 +221,7 @@ const NotificationsScreen = ({ navigation }) => {
                 Marcar todas
               </Button>
             )}
-            {notificationsData.length > 0 && (
+            {notifications.length > 0 && (
               <Button
                 mode="outlined"
                 size="small"
@@ -262,87 +233,89 @@ const NotificationsScreen = ({ navigation }) => {
                 Limpiar
               </Button>
             )}
-          </View>
-        )}
+            </View>
+            )}
 
-        {/* Lista de notificaciones */}
-        {filteredNotifications.length > 0 ? (
-          <Card style={styles.card}>
-            {filteredNotifications.map((notification, index) => (
-              <View key={notification.id}>
-                <View style={styles.notificationItemWrapper}>
-                  <TouchableOpacity
-                    style={[
-                      styles.notificationItem,
-                      !notification.read && styles.unreadItem,
-                    ]}
-                    onPress={() => handleNotificationPress(notification)}
-                    activeOpacity={0.7}
-                  >
-                    <View
-                      style={[
-                        styles.iconContainer,
-                        {
-                          backgroundColor:
-                            getTypeColor(notification.type) + "20",
-                        },
-                      ]}
-                    >
-                      <FontAwesome
-                        name={notification.icon}
-                        size={20}
-                        color={getTypeColor(notification.type)}
-                      />
-                    </View>
-
-                    <View style={styles.notificationContent}>
-                      <View style={styles.titleRow}>
-                        <Text
+            {/* Lista de notificaciones */}
+            {filteredNotifications.length > 0 ? (
+              <Card style={styles.card}>
+                {filteredNotifications.map((notification, index) => (
+                  <View key={notification.id}>
+                    <View style={styles.notificationItemWrapper}>
+                      <TouchableOpacity
+                        style={[
+                          styles.notificationItem,
+                          !notification.read && styles.unreadItem,
+                        ]}
+                        onPress={() => handleNotificationPress(notification)}
+                        activeOpacity={0.7}
+                      >
+                        <View
                           style={[
-                            styles.title,
-                            !notification.read && styles.unreadTitle,
+                            styles.iconContainer,
+                            {
+                              backgroundColor:
+                                getTypeColor(notification.type) + "20",
+                            },
                           ]}
                         >
-                          {notification.title}
-                        </Text>
-                        {!notification.read && (
-                          <View style={styles.unreadDot} />
-                        )}
-                      </View>
-                      <Text style={styles.message}>{notification.message}</Text>
-                      <Text style={styles.timestamp}>
-                        {notification.timestamp}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
+                          <FontAwesome
+                            name={notification.icon}
+                            size={20}
+                            color={getTypeColor(notification.type)}
+                          />
+                        </View>
 
-                  <TouchableOpacity
-                    style={styles.deleteButton}
-                    onPress={() => deleteNotification(notification.id)}
-                  >
-                    <FontAwesome name="trash" size={16} color="#F44336" />
-                  </TouchableOpacity>
-                </View>
-                {index < filteredNotifications.length - 1 && <Divider />}
+                        <View style={styles.notificationContent}>
+                          <View style={styles.titleRow}>
+                            <Text
+                              style={[
+                                styles.title,
+                                !notification.read && styles.unreadTitle,
+                              ]}
+                            >
+                              {notification.title}
+                            </Text>
+                            {!notification.read && (
+                              <View style={styles.unreadDot} />
+                            )}
+                          </View>
+                          <Text style={styles.message}>{notification.message}</Text>
+                          <Text style={styles.timestamp}>
+                            {notification.timestamp}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => deleteNotification(notification.id)}
+                      >
+                        <FontAwesome name="trash" size={16} color="#F44336" />
+                      </TouchableOpacity>
+                    </View>
+                    {index < filteredNotifications.length - 1 && <Divider />}
+                  </View>
+                ))}
+              </Card>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <FontAwesome
+                  name="bell-o"
+                  size={60}
+                  color={theme.colors.disabled}
+                />
+                <Text style={styles.emptyText}>
+                  {filterType
+                    ? "No hay notificaciones de este tipo"
+                    : "No tienes notificaciones"}
+                </Text>
+                <Text style={styles.emptySubText}>
+                  Te notificaremos sobre cambios importantes
+                </Text>
               </View>
-            ))}
-          </Card>
-        ) : (
-          <View style={styles.emptyContainer}>
-            <FontAwesome
-              name="bell-o"
-              size={60}
-              color={theme.colors.disabled}
-            />
-            <Text style={styles.emptyText}>
-              {filterType
-                ? "No hay notificaciones de este tipo"
-                : "No tienes notificaciones"}
-            </Text>
-            <Text style={styles.emptySubText}>
-              Te notificaremos sobre cambios importantes
-            </Text>
-          </View>
+            )}
+          </>
         )}
       </ScrollView>
     </View>

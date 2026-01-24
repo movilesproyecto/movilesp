@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo } from "react";
+import React, { useLayoutEffect, useMemo, useState } from "react";
 import {
   View,
   ScrollView,
@@ -18,14 +18,78 @@ import {
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../context/AppContext";
+import * as Sharing from "expo-sharing";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 const FavoritesScreen = ({ navigation }) => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
-  const { getFavoriteDepartments, toggleFavorite } = useAppContext();
+  const { getFavoriteDepartments, toggleFavorite, apiDeleteDepartment, canDeleteDepartment, user } = useAppContext();
+
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [departmentToDelete, setDepartmentToDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const styles = useMemo(() => createStyles(theme, insets), [theme, insets]);
   const favoriteDepartments = getFavoriteDepartments();
+
+  // Función para compartir departamento por WhatsApp
+  const shareToWhatsApp = async (dept) => {
+    const message = `🏠 *${dept.name}*\n\n📍 ${dept.address}\n🛏️ ${dept.bedrooms} habitaciones\n🚿 ${dept.bathrooms || 1} baños\n💰 $${dept.pricePerNight}/noche\n⭐ Calificación: ${dept.rating}\n\nMe interesa este departamento! 😊`;
+    
+    try {
+      // Detectar si está en web o nativo
+      if (typeof window !== 'undefined') {
+        // En web, usar la Web Share API del navegador
+        const shareData = {
+          title: dept.name,
+          text: message,
+        };
+        
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else {
+          // Fallback: copiar al portapapeles
+          await navigator.clipboard.writeText(message);
+          alert("Mensaje copiado al portapapeles. Abre WhatsApp y pégalo manualmente.");
+        }
+      } else {
+        // En nativo (Android/iOS), usar expo-sharing
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(message, {
+            mimeType: 'text/plain',
+          });
+        } else {
+          alert("Compartir no está disponible en tu dispositivo");
+        }
+      }
+    } catch (error) {
+      console.log("Error al compartir:", error);
+    }
+  };
+
+  // Función para abrir el diálogo de confirmación
+  const openDeleteDialog = (dept) => {
+    setDepartmentToDelete(dept);
+    setDeleteDialogVisible(true);
+  };
+
+  // Función para confirmar eliminación
+  const handleConfirmDelete = async () => {
+    if (!departmentToDelete) return;
+    
+    setDeleting(true);
+    const result = await apiDeleteDepartment(departmentToDelete.id);
+    setDeleting(false);
+    setDeleteDialogVisible(false);
+    
+    if (result.success) {
+      alert('Departamento eliminado correctamente');
+    } else {
+      alert(`Error: ${result.message || 'No se pudo eliminar el departamento'}`);
+    }
+    setDepartmentToDelete(null);
+  };
 
   // 👇 ESTO ES LA CLAVE: Oculta la barra de arriba para quitar el espacio doble
   useLayoutEffect(() => {
@@ -184,11 +248,27 @@ const FavoritesScreen = ({ navigation }) => {
                           Reservar
                         </Button>
                         <IconButton
-                          icon="trash-can-outline"
+                          icon="share-outline"
+                          iconColor={theme.colors.primary}
+                          size={22}
+                          onPress={() => shareToWhatsApp(dept)}
+                        />
+                        <IconButton
+                          icon="heart"
                           iconColor={theme.colors.error}
                           size={22}
                           onPress={() => toggleFavorite(dept.id)}
+                          title="Quitar de favoritos"
                         />
+                        {canDeleteDepartment(user) && (
+                          <IconButton
+                            icon="trash-can-outline"
+                            iconColor="#EF4444"
+                            size={22}
+                            onPress={() => openDeleteDialog(dept)}
+                            title="Eliminar departamento"
+                          />
+                        )}
                       </View>
                     </View>
                     {index < favoriteDepartments.length - 1 && (
@@ -223,6 +303,21 @@ const FavoritesScreen = ({ navigation }) => {
           </View>
         )}
       </ScrollView>
+
+      {/* Diálogo de confirmación para eliminar */}
+      <ConfirmDialog
+        visible={deleteDialogVisible}
+        title="Eliminar Departamento"
+        message={`¿Estás seguro de que deseas eliminar "${departmentToDelete?.name}"? Esta acción no se puede deshacer.`}
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          setDeleteDialogVisible(false);
+          setDepartmentToDelete(null);
+        }}
+        isDangerous={true}
+      />
     </View>
   );
 };

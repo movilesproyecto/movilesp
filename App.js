@@ -31,7 +31,7 @@ function AppInner() {
   }, [isDarkTheme]);
 
   // while auth state is loading, render null (or a splash) to avoid flicker
-  if (loadingAuth) return null;
+  if (loadingAuth === true) return null;
 
   return (
     <PaperProvider theme={resolvedTheme}>

@@ -67,8 +67,8 @@ export default function DepartmentDetail({ route, navigation }) {
         {/* Galería de imágenes */}
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content style={{ padding: 0 }}>
-            {department_to_use.images && department_to_use.images.length > 0 ? (
-              <ImageCarousel images={department_to_use.images} />
+            {department_to_use.imageBinary || (department_to_use.images && department_to_use.images.length > 0) ? (
+              <ImageCarousel images={department_to_use.images} imageBinary={department_to_use.imageBinary} />
             ) : (
               <View style={{ height: 220, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.backdrop }}>
                 <RNText style={{ color: theme.colors.disabled }}>Sin imágenes</RNText>
