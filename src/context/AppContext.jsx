@@ -13,10 +13,13 @@ const AppContext = createContext();
 
 export function AppProvider({ children }) {
     const [user, setUser] = useState(null);
+    const [loadingAuth, setLoadingAuth] = useState(false);
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [recentSearches, setRecentSearches] = useState([]);
     const [selectedDepts, setSelectedDepts] = useState([]);
     const [userRatings, setUserRatings] = useState({});
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const [registeredUsers, setRegisteredUsers] = useState([
         {
             nombre: 'johan palma',
@@ -58,17 +61,24 @@ export function AppProvider({ children }) {
                 // Manejar tanto formato paginado como array directo
                 const depts = Array.isArray(data) ? data : (data.data || []);
                 // ensure id is string and basic defaults
-                setDepartments((depts || []).map(d => ({
-                    id: String(d.id),
-                    name: d.name || '',
-                    address: d.address || '',
-                    bedrooms: d.bedrooms ?? 1,
-                    pricePerNight: (d.price_per_night || d.pricePerNight) ?? 50,
-                    rating: (d.rating_avg || d.rating) ?? 4.0,
-                    description: d.description || '',
-                    amenities: d.amenities || [],
-                    images: d.images || [],
-                })));
+                setDepartments((depts || []).map(d => {
+                    // Normalizar imágenes: extraer URLs si son objetos
+                    const normalizedImages = (d.images || []).map(img => 
+                        typeof img === 'string' ? img : (img.url || '')
+                    ).filter(url => url);
+                    
+                    return {
+                        id: String(d.id),
+                        name: d.name || '',
+                        address: d.address || '',
+                        bedrooms: d.bedrooms ?? 1,
+                        pricePerNight: (d.price_per_night || d.pricePerNight) ?? 50,
+                        rating: (d.rating_avg || d.rating) ?? 4.0,
+                        description: d.description || '',
+                        amenities: d.amenities || [],
+                        images: normalizedImages,
+                    };
+                }));
             } catch (e) {
                 // ignore - keep empty or seeded UI
             }
@@ -82,7 +92,16 @@ export function AppProvider({ children }) {
             try{
                 const t = await AsyncStorage.getItem('token');
                 if (t) setAuthToken(t);
+                
+                // Cargar favoritos guardados
+                const savedFavorites = await AsyncStorage.getItem('favorites');
+                if (savedFavorites) {
+                    setFavorites(JSON.parse(savedFavorites));
+                }
             }catch(e){ }
+            finally {
+                setLoadingAuth(false);
+            }
         }
         loadToken();
     }, []);
@@ -119,8 +138,49 @@ export function AppProvider({ children }) {
                 .filter(d => d.favorited_by && Array.isArray(d.favorited_by) && d.favorited_by.some(fav => fav.id === user?.id))
                 .map(d => String(d.id));
             setFavorites(favorited);
+            // Guardar en AsyncStorage para persistencia
+            await AsyncStorage.setItem('favorites', JSON.stringify(favorited));
         } catch (e) {
             console.error('[FAVORITES] Error loading:', e.message);
+            // Si hay error al cargar del servidor, intentar cargar del AsyncStorage
+            try {
+                const savedFavorites = await AsyncStorage.getItem('favorites');
+                if (savedFavorites) {
+                    setFavorites(JSON.parse(savedFavorites));
+                }
+            } catch (storageError) {
+                console.error('[FAVORITES] Error loading from storage:', storageError.message);
+            }
+        }
+    };
+
+    // Función para cargar departamentos desde la API
+    const fetchDepartments = async () => {
+        try {
+            const res = await apiClient.get('/departments');
+            const data = res?.data?.data || res?.data;
+            if (!data) return;
+            const depts = Array.isArray(data) ? data : (data.data || []);
+            setDepartments((depts || []).map(d => {
+                // Normalizar imágenes: extraer URLs si son objetos
+                const normalizedImages = (d.images || []).map(img => 
+                    typeof img === 'string' ? img : (img.url || '')
+                ).filter(url => url);
+                
+                return {
+                    id: String(d.id),
+                    name: d.name || '',
+                    address: d.address || '',
+                    bedrooms: d.bedrooms ?? 1,
+                    pricePerNight: (d.price_per_night || d.pricePerNight) ?? 50,
+                    rating: (d.rating_avg || d.rating) ?? 4.0,
+                    description: d.description || '',
+                    amenities: d.amenities || [],
+                    images: normalizedImages,
+                };
+            }));
+        } catch (e) {
+            console.error('[DEPARTMENTS] Error fetching:', e.message);
         }
     };
 
@@ -141,17 +201,24 @@ export function AppProvider({ children }) {
                     const data = res?.data?.data || res?.data;
                     if (!data) return;
                     const depts = Array.isArray(data) ? data : (data.data || []);
-                    setDepartments((depts || []).map(d => ({
-                        id: String(d.id),
-                        name: d.name || '',
-                        address: d.address || '',
-                        bedrooms: d.bedrooms ?? 1,
-                        pricePerNight: (d.price_per_night || d.pricePerNight) ?? 50,
-                        rating: (d.rating_avg || d.rating) ?? 4.0,
-                        description: d.description || '',
-                        amenities: d.amenities || [],
-                        images: d.images || [],
-                    })));
+                    setDepartments((depts || []).map(d => {
+                        // Normalizar imágenes: extraer URLs si son objetos
+                        const normalizedImages = (d.images || []).map(img => 
+                            typeof img === 'string' ? img : (img.url || '')
+                        ).filter(url => url);
+                        
+                        return {
+                            id: String(d.id),
+                            name: d.name || '',
+                            address: d.address || '',
+                            bedrooms: d.bedrooms ?? 1,
+                            pricePerNight: (d.price_per_night || d.pricePerNight) ?? 50,
+                            rating: (d.rating_avg || d.rating) ?? 4.0,
+                            description: d.description || '',
+                            amenities: d.amenities || [],
+                            images: normalizedImages,
+                        };
+                    }));
                 } catch (e) {
                     // ignore
                 }
@@ -232,20 +299,51 @@ export function AppProvider({ children }) {
 
     // API Update Department
     const apiUpdateDepartment = async (deptId, updates) => {
-        if (!authToken) return { success: false, message: 'Not authenticated' };
+        if (!authToken) return { success: false, message: 'No autenticado. Por favor inicia sesión.' };
+        
         try {
-            const res = await apiClient.put(`/departments/${deptId}`, {
-                name: updates.name,
-                address: updates.address,
-                bedrooms: updates.bedrooms,
-                price_per_night: updates.pricePerNight,
-                description: updates.description,
-                amenities: updates.amenities,
+            // Preparar payload con validación
+            const payload = {
+                name: updates.name?.trim() || undefined,
+                address: updates.address?.trim() || undefined,
+                bedrooms: updates.bedrooms ? parseInt(updates.bedrooms) : undefined,
+                price_per_night: updates.pricePerNight ? parseFloat(updates.pricePerNight) : undefined,
+                description: updates.description?.trim() || undefined,
+                amenities: updates.amenities || undefined,
+                images: updates.images && Array.isArray(updates.images) ? updates.images : undefined,  // ← AGREGADO
+            };
+            
+            // Remover propiedades undefined
+            Object.keys(payload).forEach(key => {
+                if (payload[key] === undefined) delete payload[key];
             });
-            const data = res.data?.data || res.data;
+            
+            console.log('[API] Updating department:', deptId, payload);
+            
+            const res = await apiClient.put(`/departments/${deptId}`, payload);
+            
+            // Manejar respuesta con data anidada o directa
+            const responseData = res.data;
+            const data = responseData?.data || responseData;
+            
+            // Validar que tenemos un objeto válido del departamento
+            if (!data || !data.id) {
+                console.error('[API] Invalid response format:', responseData);
+                return { success: false, message: 'Respuesta inválida del servidor' };
+            }
+            
             // Update local departments list
             setDepartments(prevDepts => prevDepts.map(d => {
                 if (String(d.id) === String(deptId)) {
+                    // Normalizar imágenes: extraer URLs si son objetos
+                    let normalizedImages = data.images || [];
+                    if (typeof normalizedImages === 'string') {
+                        normalizedImages = JSON.parse(normalizedImages);
+                    }
+                    normalizedImages = normalizedImages.map(img => 
+                        typeof img === 'string' ? img : (img.url || '')
+                    ).filter(url => url);
+                    
                     return {
                         id: String(data.id),
                         name: data.name || '',
@@ -254,17 +352,47 @@ export function AppProvider({ children }) {
                         pricePerNight: (data.price_per_night || data.pricePerNight) ?? 50,
                         rating: (data.rating_avg || data.rating) ?? 4.0,
                         description: data.description || '',
-                        amenities: data.amenities || [],
-                        images: data.images || [],
+                        amenities: data.amenities ? (typeof data.amenities === 'string' ? JSON.parse(data.amenities) : data.amenities) : [],
+                        images: normalizedImages,
                     };
                 }
                 return d;
             }));
+            
+            console.log('[API] Department updated successfully:', data);
             return { success: true, data };
         } catch (e) {
-            const errorMsg = e.response?.data?.message || e.message || 'Error updating department';
-            console.warn('[API] Update department error:', errorMsg);
-            return { success: false, error: e.response?.data, message: errorMsg };
+            // Capturar diferentes tipos de errores
+            let errorMsg = 'Error al actualizar el departamento';
+            
+            if (e.response) {
+                // Error de respuesta del servidor
+                const responseData = e.response.data;
+                errorMsg = responseData?.message || responseData?.error || e.message || errorMsg;
+                
+                // Log más detallado para debugging
+                console.error('[API] Update department error:', {
+                    status: e.response.status,
+                    message: errorMsg,
+                    data: responseData,
+                });
+                
+                return { 
+                    success: false, 
+                    error: responseData, 
+                    message: errorMsg,
+                    statusCode: e.response.status
+                };
+            } else if (e.request) {
+                // Error de request sin respuesta
+                errorMsg = 'No se pudo contactar al servidor';
+                console.error('[API] No response from server:', e.request);
+            } else {
+                // Error general
+                console.error('[API] Update error:', e);
+            }
+            
+            return { success: false, error: e, message: errorMsg };
         }
     };
 
@@ -275,14 +403,26 @@ export function AppProvider({ children }) {
             // if currently favorited locally, unfavorite
             if (favorites.includes(deptId)){
                 const res = await apiClient.delete(`/departments/${deptId}/favorite`);
-                if (res.status >= 200 && res.status < 300) setFavorites(favorites.filter(id => id !== deptId));
+                if (res.status >= 200 && res.status < 300) {
+                    const newFavorites = favorites.filter(id => id !== deptId);
+                    setFavorites(newFavorites);
+                    // Guardar en AsyncStorage
+                    await AsyncStorage.setItem('favorites', JSON.stringify(newFavorites));
+                }
                 return { success: res.status >= 200 && res.status < 300 };
             }else{
                 const res = await apiClient.post(`/departments/${deptId}/favorite`);
-                if (res.status >= 200 && res.status < 300) setFavorites([...favorites, deptId]);
+                if (res.status >= 200 && res.status < 300) {
+                    const newFavorites = [...favorites, deptId];
+                    setFavorites(newFavorites);
+                    // Guardar en AsyncStorage
+                    await AsyncStorage.setItem('favorites', JSON.stringify(newFavorites));
+                }
                 return { success: res.status >= 200 && res.status < 300 };
             }
-        }catch(e){ return { success: false, error: e.response?.data || e.message }; }
+        }catch(e){ 
+            return { success: false, error: e.response?.data || e.message }; 
+        }
     };
 
     const apiRateDepartment = async (deptId, stars, comment = '') => {
@@ -410,6 +550,46 @@ export function AppProvider({ children }) {
         }
     };
 
+    // API Delete Department
+    const apiDeleteDepartment = async (deptId) => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        if (!canDeleteDepartment(user)) return { success: false, message: 'No tienes permisos para eliminar departamentos.' };
+        try {
+            const res = await apiClient.delete(`/departments/${deptId}`);
+            if (res.status >= 200 && res.status < 300) {
+                setDepartments(prev => prev.filter(d => String(d.id) !== String(deptId)));
+                const newFavorites = favorites.filter(id => id !== String(deptId));
+                setFavorites(newFavorites);
+                // Guardar en AsyncStorage
+                await AsyncStorage.setItem('favorites', JSON.stringify(newFavorites));
+                return { success: true };
+            }
+            return { success: false };
+        } catch (e) {
+            const errorMsg = e.response?.data?.message || e.message || 'Error al eliminar departamento';
+            console.warn('[API] Delete department error:', errorMsg);
+            return { success: false, error: e.response?.data || e.message, message: errorMsg };
+        }
+    };
+
+    // API Delete Reservation
+    const apiDeleteReservation = async (reservationId) => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        if (!canDeleteReservation(user)) return { success: false, message: 'No tienes permisos para eliminar reservas.' };
+        try {
+            const res = await apiClient.delete(`/reservations/${reservationId}`);
+            if (res.status >= 200 && res.status < 300) {
+                setReservations(prev => prev.filter(r => String(r.id) !== String(reservationId)));
+                return { success: true };
+            }
+            return { success: false };
+        } catch (e) {
+            const errorMsg = e.response?.data?.message || e.message || 'Error al eliminar reserva';
+            console.warn('[API] Delete reservation error:', errorMsg);
+            return { success: false, error: e.response?.data || e.message, message: errorMsg };
+        }
+    };
+
     const getAvailableSlots = async (deptId, date) => {
         try {
             const res = await apiClient.get('/reservations/available-slots', {
@@ -422,21 +602,34 @@ export function AppProvider({ children }) {
     };
 
     // ===== IMAGE UPLOAD =====
-    const apiUploadImages = async (deptId, filesArray) => {
+    const apiUploadImages = async (deptId, filesOrFormData) => {
         if (!authToken) return { success: false, message: 'Not authenticated' };
-        if (!filesArray || filesArray.length === 0) {
-            return { success: false, error: 'No images selected' };
-        }
+        
         try{
-            const form = new FormData();
-            filesArray.forEach((f, i) => {
-                form.append('images[]', f);
-            });
+            let form;
+            
+            // Si es un FormData ya preparado (desde React Native), usarlo directamente
+            if (filesOrFormData instanceof FormData) {
+                form = filesOrFormData;
+            } else if (Array.isArray(filesOrFormData) && filesOrFormData.length > 0) {
+                // Si es un array de archivos, crear FormData
+                form = new FormData();
+                filesOrFormData.forEach((f, i) => {
+                    form.append('images[]', f);
+                });
+            } else {
+                return { success: false, error: 'No images provided' };
+            }
+            
             const res = await apiClient.post(`/departments/${deptId}/images`, form, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             if (res.status >= 200 && res.status < 300) {
-                const imageUrls = res.data.images || [];
+                const imageObjects = res.data.images || [];
+                // Extraer solo las URLs para consistencia con el estado
+                const imageUrls = imageObjects.map(img => 
+                    typeof img === 'string' ? img : img.url
+                );
                 // Actualizar departamento con las nuevas imágenes
                 setDepartments(prevDepts =>
                     prevDepts.map(d => {
@@ -453,6 +646,7 @@ export function AppProvider({ children }) {
             }
             return { success: res.status >= 200 && res.status < 300 };
         }catch(e){ 
+            console.error('Upload images error:', e);
             return { success: false, error: e.response?.data?.message || e.message }; 
         }
     };
@@ -624,9 +818,11 @@ export function AppProvider({ children }) {
     // Generic permission checker
     const canPerform = (userObj, action) => {
         if (!userObj || !userObj.rol) return false;
-        const role = userObj.rol;
-        const rolePerms = permissions[role] || {};
-        return !!rolePerms[action];
+        // Normalizar rol a minúsculas para comparación consistente
+        const role = String(userObj.rol).toLowerCase().trim();
+        const rolePerms = permissions[role] || permissions[Object.keys(permissions).find(key => key.toLowerCase() === role)];
+        const hasPermission = !!rolePerms?.[action];
+        return hasPermission;
     };
 
     // Specific helpers for common actions
@@ -660,40 +856,61 @@ export function AppProvider({ children }) {
         if (!canCreateDepartment(user)) return { success: false, message: 'No tienes permisos para crear departamentos.' };
 
         const localPayload = {
-            name,
-            address: address || data.address || '',
-            bedrooms: data.bedrooms || 1,
-            pricePerNight: data.pricePerNight || 50,
-            description: data.description || '',
+            name: name.trim(),
+            address: (address || data.address || '').trim(),
+            bedrooms: parseInt(data.bedrooms) || 1,
+            price_per_night: parseFloat(data.pricePerNight || data.price_per_night || 50),
+            description: (data.description || '').trim(),
             amenities: data.amenities || [],
             images: data.images || [],
-            rating: data.rating || 4.0,
+            rating: parseFloat(data.rating || 4.0),
         };
 
         // Si tenemos un cliente API, intentar persistir en backend
         try {
-            if (apiClient) {
+            if (apiClient && authToken) {
                 const res = await apiClient.post('/departments', localPayload);
-                const created = res?.data || null;
+                const created = res?.data?.data || res?.data || null;
                 if (created) {
-                    // Asegurar id como string
-                    const dept = { ...created, id: String(created.id || created._id || (Date.now())), };
+                    // Asegurar id como string y mapear campos correctamente
+                    const dept = {
+                        id: String(created.id || created._id || (Date.now())),
+                        name: created.name,
+                        address: created.address,
+                        bedrooms: created.bedrooms,
+                        pricePerNight: created.price_per_night || created.pricePerNight,
+                        description: created.description,
+                        amenities: created.amenities ? (typeof created.amenities === 'string' ? JSON.parse(created.amenities) : created.amenities) : [],
+                        images: created.images ? (typeof created.images === 'string' ? JSON.parse(created.images) : created.images) : [],
+                        rating: created.rating_avg || created.rating || 4.0,
+                    };
                     setDepartments((d) => [...d, dept]);
                     return { success: true, data: dept };
                 }
             }
         } catch (e) {
-            // Si falla por red o permisos, haremos fallback al almacenamiento local
-            // pero retornamos la respuesta del servidor cuando exista
-            const serverErr = e?.response?.data || e.message;
-            // continue to fallback
+            // Si falla, retornar el error del servidor
+            const serverErr = e?.response?.data?.message || e?.response?.data?.errors || e.message;
+            return { success: false, message: typeof serverErr === 'string' ? serverErr : 'Error al crear el departamento.' };
         }
 
-        // Fallback local creation cuando no hay backend o falla la petición
-        const id = (departments.length + 1).toString();
-        const newDept = { id, ...localPayload };
-        setDepartments((d) => [...d, newDept]);
-        return { success: true, data: newDept };
+        // Fallback local creation solo si no hay autenticación
+        if (!authToken) {
+            const id = (departments.length + 1).toString();
+            const newDept = {
+                id,
+                name: localPayload.name,
+                address: localPayload.address,
+                bedrooms: localPayload.bedrooms,
+                pricePerNight: localPayload.price_per_night,
+                description: localPayload.description,
+                amenities: localPayload.amenities,
+                images: localPayload.images,
+                rating: localPayload.rating,
+            };
+            setDepartments((d) => [...d, newDept]);
+            return { success: true, data: newDept };
+        }
     };
 
     const editDepartment = (id, updates) => {
@@ -781,12 +998,35 @@ export function AppProvider({ children }) {
     };
 
     // User management (admin-level)
-    const addUser = ({ nombre, correo, password, rol = Roles.USER }) => {
+    const addUser = async ({ nombre, correo, password, rol = Roles.USER }) => {
         if (!canManageUsers(user)) return { success: false, message: 'No tienes permisos para gestionar usuarios.' };
         // Sólo Superadmin puede crear/asignar el rol SUPERADMIN
         if (rol === Roles.SUPERADMIN && !isSuperAdmin(user)) return { success: false, message: 'Solo Superadmin puede crear usuarios Superadmin.' };
         const exists = registeredUsers.some((u) => u.correo.toLowerCase() === correo.toLowerCase());
         if (exists) return { success: false, message: 'El correo ya existe.' };
+        
+        try {
+            // Intentar crear en el backend
+            if (apiClient && authToken) {
+                const res = await apiClient.post('/users', {
+                    name: nombre,
+                    email: correo,
+                    password: password,
+                    role: rol
+                });
+                
+                if (res.status >= 200 && res.status < 300) {
+                    const newU = res.data?.data || { nombre, correo, password, rol, ingreso: new Date().toISOString().split('T')[0], bio: '' };
+                    setRegisteredUsers((s) => [...s, newU]);
+                    return { success: true, data: newU };
+                }
+            }
+        } catch (e) {
+            console.error('Error creating user:', e);
+            return { success: false, message: e.response?.data?.message || 'Error al crear usuario en el servidor.' };
+        }
+        
+        // Fallback: crear localmente si no hay conexión
         const newU = { nombre, correo, password, rol, ingreso: new Date().toISOString().split('T')[0], bio: '' };
         setRegisteredUsers((s) => [...s, newU]);
         return { success: true, data: newU };
@@ -920,11 +1160,19 @@ export function AppProvider({ children }) {
     };
 
     // Funciones para Favoritos
-    const toggleFavorite = (deptId) => {
+    const toggleFavorite = async (deptId) => {
+        let newFavorites;
         if (favorites.includes(deptId)) {
-            setFavorites(favorites.filter(id => id !== deptId));
+            newFavorites = favorites.filter(id => id !== deptId);
         } else {
-            setFavorites([...favorites, deptId]);
+            newFavorites = [...favorites, deptId];
+        }
+        setFavorites(newFavorites);
+        // Guardar en AsyncStorage
+        try {
+            await AsyncStorage.setItem('favorites', JSON.stringify(newFavorites));
+        } catch (e) {
+            console.error('[FAVORITES] Error saving:', e.message);
         }
     };
 
@@ -934,11 +1182,103 @@ export function AppProvider({ children }) {
         return departments.filter(d => favorites.includes(d.id));
     };
 
+    // ========== NOTIFICACIONES ==========
+    const fetchNotifications = async () => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try {
+            const res = await apiClient.get('/notifications');
+            const data = res.data?.data || res.data;
+            setNotifications(Array.isArray(data) ? data : (data || []));
+            setUnreadCount(res.data?.unread_count || 0);
+            return { success: true, notifications: data };
+        } catch (e) {
+            console.warn('[API] Fetch notifications error:', e.message);
+            return { success: false, message: e.message };
+        }
+    };
+
+    const markNotificationAsRead = async (notificationId) => {
+        if (!authToken) return { success: false };
+        try {
+            await apiClient.put(`/notifications/${notificationId}/read`);
+            setNotifications(prev => 
+                prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+            );
+            setUnreadCount(Math.max(0, unreadCount - 1));
+            return { success: true };
+        } catch (e) {
+            console.warn('[API] Mark notification as read error:', e.message);
+            return { success: false };
+        }
+    };
+
+    const markAllNotificationsAsRead = async () => {
+        if (!authToken) return { success: false };
+        try {
+            await apiClient.post('/notifications/mark-all-read');
+            setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+            setUnreadCount(0);
+            return { success: true };
+        } catch (e) {
+            console.warn('[API] Mark all notifications as read error:', e.message);
+            return { success: false };
+        }
+    };
+
+    const deleteNotification = async (notificationId) => {
+        if (!authToken) return { success: false };
+        try {
+            await apiClient.delete(`/notifications/${notificationId}`);
+            setNotifications(prev => prev.filter(n => n.id !== notificationId));
+            return { success: true };
+        } catch (e) {
+            console.warn('[API] Delete notification error:', e.message);
+            return { success: false };
+        }
+    };
+
+    const deleteAllNotifications = async () => {
+        if (!authToken) return { success: false };
+        try {
+            await apiClient.delete('/notifications');
+            setNotifications([]);
+            setUnreadCount(0);
+            return { success: true };
+        } catch (e) {
+            console.warn('[API] Delete all notifications error:', e.message);
+            return { success: false };
+        }
+    };
+
+    const getUnreadCount = async () => {
+        if (!authToken) return 0;
+        try {
+            const res = await apiClient.get('/notifications/unread-count');
+            const count = res.data?.unread_count || 0;
+            setUnreadCount(count);
+            return count;
+        } catch (e) {
+            return 0;
+        }
+    };
+
+    // Efecto para cargar notificaciones cuando el usuario inicia sesión
+    React.useEffect(() => {
+        if (authToken) {
+            fetchNotifications();
+            const interval = setInterval(() => {
+                getUnreadCount();
+            }, 30000); // Verificar cada 30 segundos
+            return () => clearInterval(interval);
+        }
+    }, [authToken]);
+
     return (
         <AppContext.Provider
             value={{
                 user,
                 setUser,
+                loadingAuth,
                 isDarkTheme: isDarkMode,
                 setIsDarkMode,
                 toggleTheme,
@@ -973,6 +1313,7 @@ export function AppProvider({ children }) {
                 editDepartment,
                 apiUpdateDepartment,
                 deleteDepartment,
+                fetchDepartments,
                 canCreateReservation,
                 canEditReservation,
                 canDeleteReservation,
@@ -1022,6 +1363,18 @@ export function AppProvider({ children }) {
                 isFavorite,
                 getFavoriteDepartments,
                 authToken,
+                apiDeleteDepartment,
+                apiDeleteReservation,
+                // Notificaciones
+                notifications,
+                unreadCount,
+                fetchNotifications,
+                markNotificationAsRead,
+                markAllNotificationsAsRead,
+                deleteNotification,
+                deleteAllNotifications,
+                getUnreadCount,
+                apiClient,
             }}
         >
             {children}

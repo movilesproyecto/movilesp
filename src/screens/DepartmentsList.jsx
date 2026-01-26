@@ -1,13 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ScrollView, StatusBar } from 'react-native';
+import React, { useMemo, useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ScrollView, StatusBar, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { FAB, useTheme, Searchbar, Button as PaperButton, TextInput, ActivityIndicator, Collapse } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
+import { FAB, useTheme, Searchbar, Button as PaperButton, TextInput, ActivityIndicator, Collapse, Dialog, Portal } from 'react-native-paper';
 import { useAppContext } from '../context/AppContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 
 export default function DepartmentsList({ navigation }) {
   const theme = useTheme();
-  const { user, canCreateDepartment, canEditDepartment, departments, isFavorite, toggleFavorite, apiToggleFavorite, getPromotionsByDept } = useAppContext();
+  const { user, canCreateDepartment, canEditDepartment, canDeleteDepartment, departments, isFavorite, toggleFavorite, apiToggleFavorite, getPromotionsByDept, fetchDepartments, apiDeleteDepartment } = useAppContext();
   const insets = useSafeAreaInsets();
   const [sortBy, setSortBy] = useState('none');
   const [page, setPage] = useState(1);
@@ -18,7 +19,16 @@ export default function DepartmentsList({ navigation }) {
   const [maxPrice, setMaxPrice] = useState('');
   const [bedroomsFilter, setBedroomsFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [departmentToDelete, setDepartmentToDelete] = useState(null);
 
+  // Refrescar cuando la pantalla se enfoca
+  useFocusEffect(
+    React.useCallback(() => {
+      setPage(1);
+      fetchDepartments();
+    }, [fetchDepartments])
+  );
   const renderItem = ({ item }) => {
     const favorited = isFavorite(item.id);
     const promotions = getPromotionsByDept(item.id);
@@ -84,6 +94,16 @@ export default function DepartmentsList({ navigation }) {
                 Editar
               </PaperButton>
             )}
+            {canDeleteDepartment && canDeleteDepartment(user) && (
+              <PaperButton 
+                mode="outlined"
+                textColor="#EF4444"
+                onPress={() => handleDeletePress(item)}
+                style={{ marginLeft: 8 }}
+              >
+                Eliminar
+              </PaperButton>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -121,6 +141,30 @@ export default function DepartmentsList({ navigation }) {
       setPage((p) => p + 1);
       setLoadingMore(false);
     }, 400);
+  };
+
+  const handleDeletePress = (department) => {
+    setDepartmentToDelete(department);
+    setDeleteDialogVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!departmentToDelete) return;
+    
+    setDeleteDialogVisible(false);
+    
+    try {
+      const result = await apiDeleteDepartment(departmentToDelete.id);
+      if (result.success) {
+        Alert.alert('Éxito', 'Departamento eliminado correctamente');
+      } else {
+        Alert.alert('Error', result.message || 'No se pudo eliminar el departamento');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Error al eliminar el departamento: ' + error.message);
+    } finally {
+      setDepartmentToDelete(null);
+    }
   };
 
   return (
@@ -305,6 +349,20 @@ export default function DepartmentsList({ navigation }) {
         onPress={() => navigation.navigate('Compare')}
         label="Comparar"
       />
+
+      {/* Delete confirmation dialog */}
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+          <Dialog.Title>Confirmar eliminación</Dialog.Title>
+          <Dialog.Content>
+            <Text>¿Estás seguro de que deseas eliminar el departamento "{departmentToDelete?.name}"? Esta acción no se puede deshacer.</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <PaperButton onPress={() => setDeleteDialogVisible(false)}>Cancelar</PaperButton>
+            <PaperButton textColor="#EF4444" onPress={confirmDelete}>Eliminar</PaperButton>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </View>
   );
 }

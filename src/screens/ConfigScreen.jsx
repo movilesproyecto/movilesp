@@ -15,7 +15,6 @@ export default function ConfigScreen() {
 
   const handleLogout = () => {
     logout();
-    navigation.replace('Login');
   };
 
   return (

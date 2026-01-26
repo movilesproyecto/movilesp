@@ -300,6 +300,13 @@ function MoreStackScreen() {
           options={{ title: "Panel Admin", headerShown: false }}
         />
       )}
+      {isAdmin(user) && (
+        <MoreStack.Screen
+          name="AdminDepartmentForm"
+          component={DepartmentForm}
+          options={{ title: "Departamento" }}
+        />
+      )}
       {isSuperAdmin(user) && (
         <MoreStack.Screen
           name="UserManagement"
@@ -343,10 +350,6 @@ export default function DashboardTabs() {
           borderTopWidth: 1,
           borderTopColor: theme.colors.outline,
           elevation: 15,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: -3 },
-          shadowOpacity: 0.1,
-          shadowRadius: 5,
         },
         tabBarIcon: ({ color }) => {
           let iconName = "home";

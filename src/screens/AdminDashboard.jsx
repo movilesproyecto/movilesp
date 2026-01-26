@@ -24,12 +24,14 @@ import { useAppContext } from "../context/AppContext";
 
 const AdminDashboard = ({ navigation }) => {
   const theme = useTheme();
-  const { departments, user } = useAppContext();
+  const { departments, user, canDeleteDepartment, apiDeleteDepartment } = useAppContext();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const [activeTab, setActiveTab] = useState("departamentos");
   const [showModal, setShowModal] = useState(false);
   const [selectedDept, setSelectedDept] = useState(null);
+  const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
+  const [departmentToDelete, setDepartmentToDelete] = useState(null);
 
   // Simulación de datos
   const [reservations] = useState([
@@ -118,6 +120,34 @@ const AdminDashboard = ({ navigation }) => {
         return "#F44336";
       default:
         return "#9E9E9E";
+    }
+  };
+
+  const handleEdit = (dept) => {
+    navigation.navigate("AdminDepartmentForm", { department: dept });
+  };
+
+  const handleDeletePress = (dept) => {
+    setDepartmentToDelete(dept);
+    setDeleteDialogVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!departmentToDelete) return;
+    
+    setDeleteDialogVisible(false);
+    
+    try {
+      const result = await apiDeleteDepartment(departmentToDelete.id);
+      if (result.success) {
+        Alert.alert("Éxito", "Departamento eliminado correctamente");
+      } else {
+        Alert.alert("Error", result.message || "No se pudo eliminar el departamento");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Error al eliminar: " + error.message);
+    } finally {
+      setDepartmentToDelete(null);
     }
   };
 
@@ -275,7 +305,7 @@ const AdminDashboard = ({ navigation }) => {
               </View>
               <Button
                 mode="contained"
-                onPress={() => navigation.navigate("DepartmentForm")}
+                onPress={() => navigation.navigate("AdminDepartmentForm")}
                 compact
                 contentStyle={{ height: 40, paddingHorizontal: 12 }}
                 style={{ borderRadius: 8 }}
@@ -351,6 +381,7 @@ const AdminDashboard = ({ navigation }) => {
                 </View>
                 <View style={styles.itemActions}>
                   <TouchableOpacity
+                    onPress={() => handleEdit(dept)}
                     style={[
                       styles.actionButton,
                       { backgroundColor: theme.colors.primary + "10" },
@@ -363,6 +394,7 @@ const AdminDashboard = ({ navigation }) => {
                     />
                   </TouchableOpacity>
                   <TouchableOpacity
+                    onPress={() => handleDeletePress(dept)}
                     style={[
                       styles.actionButton,
                       { backgroundColor: "#DC262620" },
@@ -601,7 +633,7 @@ const AdminDashboard = ({ navigation }) => {
             <Button
               mode="contained"
               onPress={() => {
-                navigation.navigate("DepartmentForm", {
+                navigation.navigate("AdminDepartmentForm", {
                   departmentId: selectedDept?.id,
                 });
                 setShowModal(false);
@@ -609,6 +641,20 @@ const AdminDashboard = ({ navigation }) => {
             >
               Editar
             </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* Dialog de confirmación de eliminación */}
+      <Portal>
+        <Dialog visible={deleteDialogVisible} onDismiss={() => setDeleteDialogVisible(false)}>
+          <Dialog.Title>Confirmar eliminación</Dialog.Title>
+          <Dialog.Content>
+            <Text>¿Estás seguro de que deseas eliminar el departamento "{departmentToDelete?.name}"? Esta acción no se puede deshacer.</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDeleteDialogVisible(false)}>Cancelar</Button>
+            <Button textColor="#EF4444" onPress={confirmDelete}>Eliminar</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>

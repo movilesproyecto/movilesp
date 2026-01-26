@@ -30,6 +30,15 @@ export default function PerfilScreen() {
   const screenWidth = Dimensions.get("window").width;
   const chartWidth = screenWidth - 72;
 
+  // Validación: si no hay usuario, mostrar loading
+  if (!user) {
+    return (
+      <View style={[styles.screen, { backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.colors.text }}>Cargando perfil...</Text>
+      </View>
+    );
+  }
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: false,
@@ -120,7 +129,13 @@ export default function PerfilScreen() {
         <View style={styles.actionsRow}>
           <Button
             mode="contained-tonal"
-            onPress={() => navigation.navigate("EditProfile")}
+            onPress={() => {
+              try {
+                navigation.navigate("EditProfile");
+              } catch (error) {
+                console.log("Error en navegación:", error);
+              }
+            }}
             style={{ flex: 1, borderRadius: 8 }}
             buttonColor="rgba(255,255,255,0.2)"
             labelStyle={{ color: "#FFFFFF", fontSize: 12 }}
@@ -131,7 +146,6 @@ export default function PerfilScreen() {
             style={[styles.logoutBtn, { backgroundColor: "#EF4444" }]}
             onPress={() => {
               logout();
-              navigation.reset({ index: 0, routes: [{ name: "Login" }] });
             }}
           >
             <FontAwesome name="sign-out" size={16} color="white" />
@@ -284,6 +298,96 @@ export default function PerfilScreen() {
             withInnerLines={false}
           />
         </Card>
+
+        <Text style={[styles.sectionTitle, { marginTop: 20, marginBottom: 12 }]}>
+          📅 Mis Reservas
+        </Text>
+        {userStats.totalReservations > 0 ? (
+          <View>
+            {reservations
+              .filter((r) => r.user === user?.correo)
+              .slice(0, 5)
+              .map((reservation) => (
+                <Card
+                  key={reservation.id}
+                  style={[styles.card, { backgroundColor: theme.colors.surface, marginBottom: 8 }]}
+                >
+                  <Card.Content>
+                    <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <Text style={{ fontSize: 14, fontWeight: "600", color: theme.colors.text }}>
+                        {reservation.deptId ? `Dept. #${reservation.deptId}` : "Departamento"}
+                      </Text>
+                      <Chip
+                        style={{
+                          backgroundColor:
+                            reservation.status === "confirmed" || reservation.status === "approved"
+                              ? "#D1FAE5"
+                              : "#FEE2E2",
+                        }}
+                        textStyle={{
+                          color:
+                            reservation.status === "confirmed" || reservation.status === "approved"
+                              ? "#065F46"
+                              : "#7F1D1D",
+                          fontSize: 11,
+                          fontWeight: "600",
+                        }}
+                      >
+                        {reservation.status === "confirmed" || reservation.status === "approved" ? "✓ Confirmada" : "⏳ Pendiente"}
+                      </Chip>
+                    </View>
+                    <View style={{ gap: 6 }}>
+                      <InfoDetailRow
+                        label="Fecha"
+                        value={reservation.date}
+                        icon="calendar"
+                        theme={theme}
+                      />
+                      <InfoDetailRow
+                        label="Hora"
+                        value={reservation.time}
+                        icon="clock-o"
+                        theme={theme}
+                      />
+                      <InfoDetailRow
+                        label="Duración"
+                        value={reservation.duration}
+                        icon="hourglass"
+                        theme={theme}
+                      />
+                      <InfoDetailRow
+                        label="Monto"
+                        value={`$${reservation.amount || 0}`}
+                        icon="dollar"
+                        theme={theme}
+                      />
+                    </View>
+                  </Card.Content>
+                </Card>
+              ))}
+            {userStats.totalReservations > 5 && (
+              <Button
+                mode="text"
+                onPress={() => navigation.navigate("ReservationsList")}
+                style={{ marginTop: 8 }}
+              >
+                Ver todas las reservas ({userStats.totalReservations})
+              </Button>
+            )}
+          </View>
+        ) : (
+          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content style={{ alignItems: "center", paddingVertical: 20 }}>
+              <FontAwesome name="calendar" size={32} color={theme.colors.placeholder} style={{ marginBottom: 8 }} />
+              <Text style={{ color: theme.colors.placeholder, fontSize: 14, fontWeight: "600" }}>
+                No tienes reservas aún
+              </Text>
+              <Text style={{ color: theme.colors.placeholder, fontSize: 12, marginTop: 4 }}>
+                Comienza a explorar departamentos
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
       </View>
       <View style={{ height: 30 }} />
     </ScrollView>
