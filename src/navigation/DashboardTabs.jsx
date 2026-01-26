@@ -16,6 +16,7 @@ import DepartmentForm from "../screens/DepartmentForm";
 import DepartmentDetail from "../screens/DepartmentDetail";
 import ReservationsList from "../screens/ReservationsList";
 import ReservationForm from "../screens/ReservationForm";
+import ReservationDetail from "../screens/ReservationDetail";
 import PaymentScreen from "../screens/PaymentScreen";
 import EditProfile from "../screens/EditProfile";
 import UserManagement from "../screens/UserManagement";
@@ -80,6 +81,11 @@ function DepartmentsStack() {
         name="ReservationForm"
         component={ReservationForm}
         options={{ title: "Nueva Reserva" }}
+      />
+      <Stack.Screen
+        name="ReservationDetail"
+        component={ReservationDetail}
+        options={{ title: "Detalle de Reserva" }}
       />
       <Stack.Screen
         name="Payment"
@@ -298,6 +304,13 @@ function MoreStackScreen() {
           name="AdminDashboard"
           component={AdminDashboard}
           options={{ title: "Panel Admin", headerShown: false }}
+        />
+      )}
+      {isAdmin(user) && (
+        <MoreStack.Screen
+          name="Reservations"
+          component={ReservationsList}
+          options={{ title: "Reservas" }}
         />
       )}
       {isAdmin(user) && (

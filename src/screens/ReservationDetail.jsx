@@ -19,15 +19,15 @@ export default function ReservationDetail({ route, navigation }) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}> 
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.container, { backgroundColor: '#f5f5f5' }]}>
+      <Card style={[styles.card, { backgroundColor: '#fff' }]}>
         <Card.Content>
-          <Text variant="titleLarge" style={{ fontWeight: '700', marginBottom: 6 }}>{department?.name || 'Reserva'}</Text>
-          <Text style={{ color: theme.colors.placeholder, marginBottom: 4 }}>Fecha: <Text style={{ color: theme.colors.text }}>{reservation.date}</Text></Text>
-          <Text style={{ color: theme.colors.placeholder, marginBottom: 4 }}>Hora: <Text style={{ color: theme.colors.text }}>{reservation.time}</Text></Text>
-          <Text style={{ color: theme.colors.placeholder, marginBottom: 8 }}>Duración: <Text style={{ color: theme.colors.text }}>{reservation.duration}</Text></Text>
-          <Text style={{ color: theme.colors.placeholder, marginBottom: 4 }}>Usuario: <Text style={{ color: theme.colors.text }}>{reservation.user}</Text></Text>
-          <Text style={{ color: theme.colors.placeholder, marginBottom: 12 }}>Estado: <Text style={{ color: theme.colors.text }}>{reservation.status || 'pendiente'}</Text></Text>
+          <Text variant="titleLarge" style={{ fontWeight: '700', marginBottom: 6, color: '#000' }}>{department?.name || 'Reserva'}</Text>
+          <Text style={{ color: '#666', marginBottom: 4 }}>Fecha: <Text style={{ color: '#000' }}>{reservation.date}</Text></Text>
+          <Text style={{ color: '#666', marginBottom: 4 }}>Hora: <Text style={{ color: '#000' }}>{reservation.time}</Text></Text>
+          <Text style={{ color: '#666', marginBottom: 8 }}>Duración: <Text style={{ color: '#000' }}>{reservation.duration}</Text></Text>
+          <Text style={{ color: '#666', marginBottom: 4 }}>Usuario: <Text style={{ color: '#000' }}>{reservation.user}</Text></Text>
+          <Text style={{ color: '#666', marginBottom: 12 }}>Estado: <Text style={{ color: '#000' }}>{reservation.status || 'pendiente'}</Text></Text>
 
           <View style={styles.actions}>
             <Button mode="outlined" onPress={() => navigation.goBack()} style={{ flex: 1, marginRight: 8 }}>Volver</Button>

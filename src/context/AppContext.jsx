@@ -25,7 +25,7 @@ export function AppProvider({ children }) {
             nombre: 'johan palma',
             correo: 'johan11gamerez@gmail.com',
             password: '123456',
-            rol: Roles.USER,
+            role: Roles.USER,
             ingreso: '2025-12-10',
             bio: 'Aplicaciones Moviles septimo semestre B',
         },
@@ -49,7 +49,7 @@ export function AppProvider({ children }) {
     const [departments, setDepartments] = useState([]);
     const [authToken, setAuthToken] = useState(null);
 
-    const [favorites, setFavorites] = useState(['2', '4', '7', '9']);
+    const [favorites, setFavorites] = useState([]);
 
     useEffect(() => {
         // fetch departments from backend API on mount (using apiClient)
@@ -116,7 +116,7 @@ export function AppProvider({ children }) {
                 id: userData.id,
                 nombre: userData.name,
                 correo: userData.email,
-                rol: userData.role || Roles.USER,
+                role: userData.role || Roles.USER,
                 bio: userData.bio || '',
                 telefono: userData.phone || '',
                 genero: userData.gender || '',
@@ -185,10 +185,9 @@ export function AppProvider({ children }) {
     };
 
     useEffect(() => {
-        // Cargar perfil y favoritos cuando el usuario se autentica
+        // Cargar perfil cuando el usuario se autentica
         if (authToken && user) {
             loadUserProfile();
-            loadUserFavorites();
         }
     }, [authToken, user?.id]);
 
@@ -219,6 +218,9 @@ export function AppProvider({ children }) {
                             images: normalizedImages,
                         };
                     }));
+                    
+                    // Después de cargar departamentos, cargar favoritos del usuario
+                    await loadUserFavorites();
                 } catch (e) {
                     // ignore
                 }
@@ -550,6 +552,42 @@ export function AppProvider({ children }) {
         }
     };
 
+    // Complete reservation (change status to completed)
+    const completeReservation = async (reservationId) => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        if (!canApproveReservation(user)) return { success: false, message: 'No tienes permisos para completar reservas.' };
+        try {
+            const res = await apiClient.patch(`/reservations/${reservationId}/status`, { status: 'completed' });
+            if (res.status >= 200 && res.status < 300) {
+                setReservations(prev => prev.map(r =>
+                    String(r.id) === String(reservationId) ? { ...r, status: 'completed' } : r
+                ));
+                return { success: true };
+            }
+            return { success: false };
+        } catch (e) {
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
+    // Cancel reservation (change status to cancelled)
+    const cancelReservationStatus = async (reservationId) => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        if (!canApproveReservation(user)) return { success: false, message: 'No tienes permisos para cancelar reservas.' };
+        try {
+            const res = await apiClient.patch(`/reservations/${reservationId}/status`, { status: 'cancelled' });
+            if (res.status >= 200 && res.status < 300) {
+                setReservations(prev => prev.map(r =>
+                    String(r.id) === String(reservationId) ? { ...r, status: 'cancelled' } : r
+                ));
+                return { success: true };
+            }
+            return { success: false };
+        } catch (e) {
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
     // API Delete Department
     const apiDeleteDepartment = async (deptId) => {
         if (!authToken) return { success: false, message: 'Not authenticated' };
@@ -700,7 +738,7 @@ export function AppProvider({ children }) {
         const predefinedUser = registeredUsers.find(
             (u) => u.correo.toLowerCase() === correo.toLowerCase()
         );
-        const assignedRole = predefinedUser?.rol || Roles.USER;
+        const assignedRole = predefinedUser?.role || Roles.USER;
 
         // Crear nuevo usuario
         const newUser = {
@@ -744,7 +782,7 @@ export function AppProvider({ children }) {
         const demoUser = {
             nombre: 'johan palma',
             correo: 'johan11gamerez@gmail.com',
-            rol: Roles.USER,
+            role: Roles.USER,
             ingreso: '2025-12-08',
             bio: 'Aplicaciones Moviles septimo semestre B',
         };
@@ -766,8 +804,8 @@ export function AppProvider({ children }) {
     // Role helpers
     const roleOrder = [Roles.USER, Roles.ADMIN, Roles.SUPERADMIN];
     const hasRole = (userObj, requiredRole) => {
-        if (!userObj || !userObj.rol) return false;
-        const userIndex = roleOrder.indexOf(userObj.rol);
+        if (!userObj || !userObj.role) return false;
+        const userIndex = roleOrder.indexOf(userObj.role);
         const reqIndex = roleOrder.indexOf(requiredRole);
         if (userIndex === -1 || reqIndex === -1) return false;
         return userIndex >= reqIndex;
@@ -817,9 +855,9 @@ export function AppProvider({ children }) {
 
     // Generic permission checker
     const canPerform = (userObj, action) => {
-        if (!userObj || !userObj.rol) return false;
+        if (!userObj || !userObj.role) return false;
         // Normalizar rol a minúsculas para comparación consistente
-        const role = String(userObj.rol).toLowerCase().trim();
+        const role = String(userObj.role).toLowerCase().trim();
         const rolePerms = permissions[role] || permissions[Object.keys(permissions).find(key => key.toLowerCase() === role)];
         const hasPermission = !!rolePerms?.[action];
         return hasPermission;
@@ -839,7 +877,7 @@ export function AppProvider({ children }) {
 
     // Friendly label for roles
     const roleLabel = (roleOrUser) => {
-        const role = typeof roleOrUser === 'string' ? roleOrUser : (roleOrUser && roleOrUser.rol) ? roleOrUser.rol : null;
+        const role = typeof roleOrUser === 'string' ? roleOrUser : (roleOrUser && roleOrUser.role) ? roleOrUser.role : null;
         switch (role) {
             case Roles.ADMIN:
                 return 'Administrador';
@@ -998,10 +1036,10 @@ export function AppProvider({ children }) {
     };
 
     // User management (admin-level)
-    const addUser = async ({ nombre, correo, password, rol = Roles.USER }) => {
+    const addUser = async ({ nombre, correo, password, role = Roles.USER }) => {
         if (!canManageUsers(user)) return { success: false, message: 'No tienes permisos para gestionar usuarios.' };
         // Sólo Superadmin puede crear/asignar el rol SUPERADMIN
-        if (rol === Roles.SUPERADMIN && !isSuperAdmin(user)) return { success: false, message: 'Solo Superadmin puede crear usuarios Superadmin.' };
+        if (role === Roles.SUPERADMIN && !isSuperAdmin(user)) return { success: false, message: 'Solo Superadmin puede crear usuarios Superadmin.' };
         const exists = registeredUsers.some((u) => u.correo.toLowerCase() === correo.toLowerCase());
         if (exists) return { success: false, message: 'El correo ya existe.' };
         
@@ -1012,7 +1050,7 @@ export function AppProvider({ children }) {
                     name: nombre,
                     email: correo,
                     password: password,
-                    role: rol
+                    role: role
                 });
                 
                 if (res.status >= 200 && res.status < 300) {
@@ -1046,11 +1084,11 @@ export function AppProvider({ children }) {
         if (newRole === Roles.SUPERADMIN && !isSuperAdmin(user)) return { success: false, message: 'Solo Superadmin puede asignar Superadmin.' };
         let changed = null;
         setRegisteredUsers((s) => s.map((u) => {
-            if (u.correo.toLowerCase() === correo.toLowerCase()) { changed = { ...u, rol: newRole }; return changed; }
+            if (u.correo.toLowerCase() === correo.toLowerCase()) { changed = { ...u, role: newRole }; return changed; }
             return u;
         }));
         // If changing current user's role, update session
-        if (user?.correo?.toLowerCase() === correo.toLowerCase()) setUser((u) => ({ ...u, rol: newRole }));
+        if (user?.correo?.toLowerCase() === correo.toLowerCase()) setUser((u) => ({ ...u, role: newRole }));
         return { success: true, data: changed };
     };
 
@@ -1297,6 +1335,8 @@ export function AppProvider({ children }) {
                 fetchReservations,
                 createReservation,
                 cancelReservation,
+                completeReservation,
+                cancelReservationStatus,
                 getAvailableSlots,
                 loadUserProfile,
                 loadUserFavorites,

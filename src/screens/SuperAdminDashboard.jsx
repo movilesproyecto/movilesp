@@ -13,7 +13,7 @@ const SuperAdminDashboard = ({ navigation }) => {
   const chartWidth = screenWidth - 32;
 
   // Debug: Log para verificar datos
-  console.log('SuperAdmin - User:', user?.rol, 'isSuperAdmin:', isSuperAdmin(user), 'monthlyEarnings:', monthlyEarnings?.length);
+  console.log('SuperAdmin - User:', user?.role, 'isSuperAdmin:', isSuperAdmin(user), 'monthlyEarnings:', monthlyEarnings?.length);
 
   // Verificar que el usuario sea super admin
   if (!isSuperAdmin(user)) {
@@ -31,7 +31,7 @@ const SuperAdminDashboard = ({ navigation }) => {
               No tienes permisos para acceder a este apartado.
             </Text>
             <Text style={{ fontSize: 12, textAlign: 'center', color: theme.colors.disabled, marginTop: 8 }}>
-              Tu rol actual: {user?.rol}
+              Tu rol actual: {user?.role}
             </Text>
           </Card.Content>
         </Card>

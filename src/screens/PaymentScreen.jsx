@@ -57,6 +57,11 @@ const PaymentScreen = ({ route, navigation }) => {
       return;
     }
 
+    if (!reservationData.deptId || !reservationData.date || !reservationData.time) {
+      Alert.alert('Error', 'Datos de reserva incompletos. Regresa y completa el formulario.');
+      return;
+    }
+
     setLoading(true);
 
     // Procesar pago con backend

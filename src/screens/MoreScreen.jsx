@@ -7,10 +7,11 @@ import {
   Alert,
   Switch,
   StatusBar,
-  Share,
   Linking,
   Platform,
 } from "react-native";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
 import { CommonActions } from "@react-navigation/native";
 import {
   Card,
@@ -61,11 +62,24 @@ const MoreScreen = ({ navigation }) => {
           "Descubre nuestra app de gestión de departamentos: https://play.google.com/store/apps/details?id=com.moviles.departamentos",
       });
 
-      await Share.share({
-        message: message || "Descubre nuestra app de gestión de departamentos",
-        title: "Compartir Aplicación",
-        url: "https://apps.apple.com/app/id1234567890",
-      });
+      if (await Sharing.isAvailableAsync()) {
+        // Crear un archivo temporal con el mensaje
+        const filename = 'app_departamentos.txt';
+        const fileUri = `${FileSystem.documentDirectory}${filename}`;
+
+        // Escribir el mensaje en un archivo
+        await FileSystem.writeAsStringAsync(fileUri, message || "Descubre nuestra app de gestión de departamentos", {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+
+        // Compartir el archivo
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/plain',
+          dialogTitle: 'Compartir Aplicación',
+        });
+      } else {
+        Alert.alert("Error", "Compartir no está disponible en tu dispositivo");
+      }
     } catch (error) {
       Alert.alert("Error", "No se pudo compartir la aplicación");
     }
@@ -226,7 +240,7 @@ const MoreScreen = ({ navigation }) => {
                         { color: theme.colors.primary },
                       ]}
                     >
-                      {user?.rol?.toUpperCase()}
+                      {user?.role?.toUpperCase()}
                     </Text>
                   </View>
                 </View>

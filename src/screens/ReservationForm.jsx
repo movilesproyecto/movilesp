@@ -17,16 +17,32 @@ LocaleConfig.defaultLocale = 'es';
 export default function ReservationForm({ route, navigation }) {
   const preDept = route?.params?.department;
   const theme = useTheme();
-  const { user, canCreateReservation, departments = [], reservations = [], reservation } = useAppContext();
+  const { user, canCreateReservation, departments = [], reservations = [], reservation, fetchDepartments, getAvailableSlots } = useAppContext();
+
+  useEffect(() => {
+    if (!departments || departments.length === 0) {
+      fetchDepartments();
+    }
+  }, [departments, fetchDepartments]);
+
+  useEffect(() => {
+    if (!user) {
+      navigation.navigate('Login');
+    }
+  }, [user, navigation]);
+  // Obtener el minDate como mañana (después de hoy)
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(today.getDate() + 1);
+  const minDateStr = tomorrow.toISOString().split('T')[0];
+
   const [dept, setDept] = useState(preDept ? preDept.id : (departments && departments.length > 0 ? departments[0].id : null));
-  const [selectedDate, setSelectedDate] = useState('2025-12-20');
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(minDateStr);
   const [time, setTime] = useState('09:00');
   const [duration, setDuration] = useState('1h');
-
-  // Obtener el minDate como hoy
-  const today = new Date();
-  const minDate = today.toISOString().split('T')[0];
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
     if (preDept) setDept(preDept.id);
@@ -35,6 +51,27 @@ export default function ReservationForm({ route, navigation }) {
   useEffect(() => {
     if (!dept && departments && departments.length) setDept(departments[0].id);
   }, [departments]);
+
+  // Fetch available slots when department or date changes
+  useEffect(() => {
+    const fetchSlots = async () => {
+      if (!dept || !selectedDate) return;
+      setLoadingSlots(true);
+      const result = await getAvailableSlots(dept, selectedDate);
+      if (result.success) {
+        setAvailableSlots(result.slots);
+        // If current time is not available, set to first available
+        if (!result.slots.includes(time)) {
+          setTime(result.slots[0] || '09:00');
+        }
+      } else {
+        // If error, assume all slots available (fallback)
+        setAvailableSlots(['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00']);
+      }
+      setLoadingSlots(false);
+    };
+    fetchSlots();
+  }, [dept, selectedDate, getAvailableSlots]);
 
   const onSubmit = () => {
     if (!canCreateReservation(user)) { 
@@ -45,27 +82,23 @@ export default function ReservationForm({ route, navigation }) {
 
     // Validar que no exista una reserva del mismo usuario en el mismo departamento y fecha
     const yaReservado = reservations.some(res => 
-      res.deptId === dept && res.date === selectedDate && (res.status === 'confirmed' || res.status === 'approved')
+      res.deptId === dept && res.date === selectedDate && (res.status === 'confirmed' || res.status === 'pending')
     );
 
     if (yaReservado) {
       Alert.alert(
         'Departamento no disponible',
-        'Ya tienes una reserva confirmada para este departamento en esta fecha. Por favor, elige otro día o departamento.',
+        'Ya tienes una reserva confirmada o pendiente para este departamento en esta fecha. Por favor, elige otro día o departamento.',
         [{ text: 'Entendido' }]
       );
       return;
     }
 
-    // Validar que el departamento no esté reservado en el mismo horario
-    const conflictoHorario = reservations.some(res =>
-      res.deptId === dept && res.date === selectedDate && res.time === time && (res.status === 'confirmed' || res.status === 'approved')
-    );
-
-    if (conflictoHorario) {
+    // Validar que el horario esté disponible
+    if (!availableSlots.includes(time)) {
       Alert.alert(
         'Horario no disponible',
-        'Este departamento ya está reservado en esa fecha y hora. Por favor, elige otro horario.',
+        'Este horario ya no está disponible. Por favor, selecciona otro horario.',
         [{ text: 'Entendido' }]
       );
       return;
@@ -87,7 +120,7 @@ export default function ReservationForm({ route, navigation }) {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScrollView style={[styles.container, { backgroundColor: '#f5f5f5' }]}>
       <Card style={[styles.headerCard, { backgroundColor: theme.colors.surface }]}>
         <Card.Content>
           <Text variant="headlineMedium" style={{ fontWeight: 'bold', marginBottom: 8 }}>Nueva Reserva</Text>
@@ -107,9 +140,7 @@ export default function ReservationForm({ route, navigation }) {
               </Picker>
             </View>
           ) : (
-            <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>
-              <Text style={{ padding: 12, color: theme.colors.disabled }}>Cargando departamentos...</Text>
-            </View>
+            <Text style={{ color: theme.colors.text, textAlign: 'center', marginVertical: 10 }}>Cargando departamentos...</Text>
           )}
 
           <Text style={[styles.label, { color: theme.colors.text, marginTop: 16 }]}>Fecha</Text>
@@ -138,7 +169,7 @@ export default function ReservationForm({ route, navigation }) {
                   setSelectedDate(day.dateString);
                   setShowCalendar(false);
                 }}
-                minDate={minDate}
+                minDate={minDateStr}
                 monthFormat={'MMMM yyyy'}
                 hideExtraDays={true}
                 disableAllTouchEventsForDisabledDays={true}
@@ -174,8 +205,20 @@ export default function ReservationForm({ route, navigation }) {
             </View>
           )}
 
-          <Text style={[styles.label, { color: theme.colors.text, marginTop: 16 }]}>Hora (HH:MM)</Text>
-          <TextInput style={[styles.input, { borderColor: theme.colors.outline }]} value={time} onChangeText={setTime} placeholder="09:00" />
+          <Text style={[styles.label, { color: theme.colors.text, marginTop: 16 }]}>Hora</Text>
+          {loadingSlots ? (
+            <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>
+              <Text style={{ padding: 12, color: theme.colors.disabled }}>Cargando horarios disponibles...</Text>
+            </View>
+          ) : (
+            <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>
+              <Picker selectedValue={time} onValueChange={(v) => setTime(v)}>
+                {availableSlots.map((slot) => (
+                  <Picker.Item key={slot} label={slot} value={slot} />
+                ))}
+              </Picker>
+            </View>
+          )}
 
           <Text style={[styles.label, { color: theme.colors.text, marginTop: 16 }]}>Duración</Text>
           <View style={[styles.pickerWrapper, { borderColor: theme.colors.outline }]}>

@@ -25,10 +25,10 @@ export default function ConfigScreen() {
         <Divider />
         <Card.Content>
           <Text style={{ marginBottom: 8, color: theme.colors.disabled }}>Usuario: {user?.correo || 'no-session'}</Text>
-          <Text style={{ marginBottom: 8, color: theme.colors.disabled }}>Rol: {user ? (user.rol || '---') : 'anon'}</Text>
+          <Text style={{ marginBottom: 8, color: theme.colors.disabled }}>Rol: {user ? (user.role || '---') : 'anon'}</Text>
           <Text style={{ marginBottom: 8, color: theme.colors.disabled }}>Teléfono: {user?.telefono || '---'}</Text>
           <Text style={{ marginBottom: 8, color: theme.colors.disabled }}>Género: {user?.genero || '---'}</Text>
-          {user && user.rol === 'superadmin' && <Text style={{ marginBottom: 8, color: theme.colors.primary }}>DEBUG: eres superadmin</Text>}
+          {user && user.role === 'superadmin' && <Text style={{ marginBottom: 8, color: theme.colors.primary }}>DEBUG: eres superadmin</Text>}
           <List.Section>
             <List.Subheader>Cuenta</List.Subheader>
             <List.Item title="Editar perfil" description="Actualiza tus datos personales" onPress={() => navigation.navigate('EditProfile')} left={() => <List.Icon icon="account-outline" />} />

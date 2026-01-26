@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   ScrollView,
@@ -24,7 +24,7 @@ import { useAppContext } from "../context/AppContext";
 
 const AdminDashboard = ({ navigation }) => {
   const theme = useTheme();
-  const { departments, user, canDeleteDepartment, apiDeleteDepartment } = useAppContext();
+  const { departments, user, canDeleteDepartment, apiDeleteDepartment, reservations, fetchReservations, authToken } = useAppContext();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const [activeTab, setActiveTab] = useState("departamentos");
@@ -33,33 +33,12 @@ const AdminDashboard = ({ navigation }) => {
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
 
-  // Simulación de datos
-  const [reservations] = useState([
-    {
-      id: 1,
-      user: "Johan Gamer",
-      dept: departments[0]?.name,
-      dates: "15-20 Feb",
-      status: "pendiente",
-      total: 750,
-    },
-    {
-      id: 2,
-      user: "María López",
-      dept: departments[1]?.name,
-      dates: "10-15 Feb",
-      status: "aprobada",
-      total: 600,
-    },
-    {
-      id: 3,
-      user: "Carlos Pérez",
-      dept: departments[2]?.name,
-      dates: "5-10 Feb",
-      status: "completada",
-      total: 1200,
-    },
-  ]);
+  // Cargar reservas al montar el componente
+  useEffect(() => {
+    if (authToken) {
+      fetchReservations();
+    }
+  }, [authToken, fetchReservations]);
 
   const [users] = useState([
     {
@@ -110,16 +89,35 @@ const AdminDashboard = ({ navigation }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
+      case "pending":
       case "pendiente":
         return "#FFA500";
+      case "confirmed":
       case "aprobada":
         return "#4CAF50";
+      case "completed":
       case "completada":
         return "#2196F3";
+      case "cancelled":
       case "cancelada":
         return "#F44336";
       default:
         return "#9E9E9E";
+    }
+  };
+
+  const formatStatus = (status) => {
+    switch (status) {
+      case "pending":
+        return "Pendiente";
+      case "confirmed":
+        return "Confirmada";
+      case "completed":
+        return "Completada";
+      case "cancelled":
+        return "Cancelada";
+      default:
+        return status;
     }
   };
 
@@ -443,7 +441,7 @@ const AdminDashboard = ({ navigation }) => {
                     <Text
                       style={[styles.resName, { color: theme.colors.text }]}
                     >
-                      {res.user}
+                      Usuario
                     </Text>
                     <Text
                       style={[
@@ -451,7 +449,7 @@ const AdminDashboard = ({ navigation }) => {
                         { color: theme.colors.placeholder },
                       ]}
                     >
-                      📍 {res.dept}
+                      📍 {res.departmentName}
                     </Text>
                     <View style={styles.resDateRow}>
                       <Text
@@ -460,7 +458,7 @@ const AdminDashboard = ({ navigation }) => {
                           { color: theme.colors.placeholder },
                         ]}
                       >
-                        📅 {res.dates}
+                        📅 {res.date}
                       </Text>
                       <Text
                         style={[
@@ -468,13 +466,13 @@ const AdminDashboard = ({ navigation }) => {
                           { color: theme.colors.primary, fontWeight: "700" },
                         ]}
                       >
-                        ${res.total}
+                        ${res.amount}
                       </Text>
                     </View>
                   </View>
                   <View style={styles.statusContainer}>
                     <Chip
-                      label={res.status}
+                      label={formatStatus(res.status)}
                       style={{
                         backgroundColor: getStatusColor(res.status) + "20",
                       }}
@@ -489,6 +487,7 @@ const AdminDashboard = ({ navigation }) => {
                       compact
                       size="small"
                       style={{ marginTop: 8 }}
+                      onPress={() => navigation.navigate('Reservations')}
                     >
                       Revisar
                     </Button>

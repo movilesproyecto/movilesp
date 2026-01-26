@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config';
 
@@ -49,7 +50,9 @@ apiClient.interceptors.response.use(
     }
     if (error?.response?.status === 401) {
       try {
-        await AsyncStorage.removeItem('token');
+        if (Platform.OS !== 'web') {
+          await AsyncStorage.removeItem('token');
+        }
       } catch (e) {}
     }
     return Promise.reject(error);

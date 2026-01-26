@@ -19,6 +19,7 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../context/AppContext";
 import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
 import ConfirmDialog from "../components/ConfirmDialog";
 
 const FavoritesScreen = ({ navigation }) => {
@@ -36,35 +37,31 @@ const FavoritesScreen = ({ navigation }) => {
   // Función para compartir departamento por WhatsApp
   const shareToWhatsApp = async (dept) => {
     const message = `🏠 *${dept.name}*\n\n📍 ${dept.address}\n🛏️ ${dept.bedrooms} habitaciones\n🚿 ${dept.bathrooms || 1} baños\n💰 $${dept.pricePerNight}/noche\n⭐ Calificación: ${dept.rating}\n\nMe interesa este departamento! 😊`;
-    
+
     try {
-      // Detectar si está en web o nativo
-      if (typeof window !== 'undefined') {
-        // En web, usar la Web Share API del navegador
-        const shareData = {
-          title: dept.name,
-          text: message,
-        };
-        
-        if (navigator.share) {
-          await navigator.share(shareData);
-        } else {
-          // Fallback: copiar al portapapeles
-          await navigator.clipboard.writeText(message);
-          alert("Mensaje copiado al portapapeles. Abre WhatsApp y pégalo manualmente.");
-        }
+      // Usar expo-sharing para compartir
+      if (await Sharing.isAvailableAsync()) {
+        // Crear un archivo temporal con el mensaje
+        const filename = 'departamento.txt';
+        const fileUri = `${FileSystem.documentDirectory}${filename}`;
+
+        // Escribir el mensaje en un archivo
+        await FileSystem.writeAsStringAsync(fileUri, message, {
+          encoding: FileSystem.EncodingType.UTF8,
+        });
+
+        // Compartir el archivo
+        await Sharing.shareAsync(fileUri, {
+          mimeType: 'text/plain',
+          dialogTitle: `Compartir ${dept.name}`,
+        });
       } else {
-        // En nativo (Android/iOS), usar expo-sharing
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(message, {
-            mimeType: 'text/plain',
-          });
-        } else {
-          alert("Compartir no está disponible en tu dispositivo");
-        }
+        alert("Compartir no está disponible en tu dispositivo");
       }
     } catch (error) {
       console.log("Error al compartir:", error);
+      // Fallback: mostrar el mensaje para copiar manualmente
+      alert(`Mensaje para compartir:\n\n${message}\n\nCopia este mensaje y compártelo por WhatsApp.`);
     }
   };
 

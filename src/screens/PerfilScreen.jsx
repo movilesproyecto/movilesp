@@ -368,7 +368,7 @@ export default function PerfilScreen() {
             {userStats.totalReservations > 5 && (
               <Button
                 mode="text"
-                onPress={() => navigation.navigate("ReservationsList")}
+                onPress={() => navigation.navigate("Departamentos", { screen: "Reservations" })}
                 style={{ marginTop: 8 }}
               >
                 Ver todas las reservas ({userStats.totalReservations})

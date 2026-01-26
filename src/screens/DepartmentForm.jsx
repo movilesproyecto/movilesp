@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, ScrollView, StyleSheet, Alert, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Alert, TouchableOpacity, Platform } from 'react-native';
 import { TextInput, Button, Text, useTheme, Card, Divider, Chip } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome } from '@expo/vector-icons';
@@ -37,6 +37,10 @@ export default function DepartmentForm({ route, navigation }) {
   }, [dept]);
 
   const pickImageFromGallery = async () => {
+    if (Platform.OS === 'web') {
+      Alert.alert('No disponible', 'Seleccionar imágenes no está disponible en la versión web.');
+      return;
+    }
     try {
       setPickingImage(true);
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -294,7 +298,7 @@ export default function DepartmentForm({ route, navigation }) {
             mode="contained"
             icon="image-plus"
             onPress={pickImageFromGallery}
-            disabled={pickingImage || uploading || images.length >= 10}
+            disabled={pickingImage || uploading || images.length >= 10 || Platform.OS === 'web'}
             style={{ marginBottom: 12 }}
             buttonColor={theme.colors.primary}
             loading={pickingImage || uploading}

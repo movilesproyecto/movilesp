@@ -32,12 +32,12 @@ const UserManagement = ({ navigation }) => {
     nombre: '',
     email: '',
     password: '',
-    rol: 'user',
+    role: 'user',
   });
   const [users, setUsers] = useState([
-    { id: 1, nombre: 'Johan Gamer', email: 'johan11gamerez@gmail.com', rol: 'user', status: 'activo' },
-    { id: 2, nombre: 'Admin Demo', email: 'admin@demo.com', rol: 'admin', status: 'activo' },
-    { id: 3, nombre: 'Root System', email: 'root@demo.com', rol: 'superadmin', status: 'activo' },
+    { id: 1, nombre: 'Johan Gamer', email: 'johan11gamerez@gmail.com', role: 'user', status: 'activo' },
+    { id: 2, nombre: 'Admin Demo', email: 'admin@demo.com', role: 'admin', status: 'activo' },
+    { id: 3, nombre: 'Root System', email: 'root@demo.com', role: 'superadmin', status: 'activo' },
   ]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -75,14 +75,14 @@ const UserManagement = ({ navigation }) => {
       id: users.length + 1,
       nombre: formData.nombre,
       email: formData.email,
-      rol: formData.rol,
+      role: formData.role,
       status: 'activo',
     };
 
     setUsers([...users, newUser]);
-    setFormData({ nombre: '', email: '', password: '', rol: 'user' });
+    setFormData({ nombre: '', email: '', password: '', role: 'user' });
     setShowModal(false);
-    Alert.alert('Éxito', `Usuario ${newUser.nombre} creado con rol ${newUser.rol}`);
+    Alert.alert('Éxito', `Usuario ${newUser.nombre} creado con rol ${newUser.role}`);
   };
 
   const handleDeleteUser = (userId) => {
@@ -153,7 +153,7 @@ const UserManagement = ({ navigation }) => {
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Text style={[styles.statNumber, { color: '#E91E63' }]}>
-                  {users.filter(u => u.rol === 'superadmin').length}
+                  {users.filter(u => u.role === 'superadmin').length}
                 </Text>
                 <Text style={[styles.statLabel, { color: theme.colors.disabled }]}>
                   SuperAdmins
@@ -192,7 +192,7 @@ const UserManagement = ({ navigation }) => {
                 <Avatar.Text
                   size={50}
                   label={u.nombre.substring(0, 2).toUpperCase()}
-                  style={{ backgroundColor: getRoleColor(u.rol) }}
+                  style={{ backgroundColor: getRoleColor(u.role) }}
                 />
                 <View style={styles.userCardInfo}>
                   <Text style={[styles.userCardName, { color: theme.colors.text }]}>
@@ -203,13 +203,13 @@ const UserManagement = ({ navigation }) => {
                   </Text>
                   <View style={styles.userCardMeta}>
                     <Chip
-                      label={u.rol.toUpperCase()}
+                      label={u.role.toUpperCase()}
                       compact
                       style={{
-                        backgroundColor: getRoleColor(u.rol) + '20',
+                        backgroundColor: getRoleColor(u.role) + '20',
                       }}
                       textStyle={{
-                        color: getRoleColor(u.rol),
+                        color: getRoleColor(u.role),
                         fontSize: 11,
                         fontWeight: '700',
                       }}
@@ -317,26 +317,26 @@ const UserManagement = ({ navigation }) => {
                 ].map((role) => (
                   <TouchableOpacity
                     key={role.value}
-                    onPress={() => setFormData({ ...formData, rol: role.value })}
+                    onPress={() => setFormData({ ...formData, role: role.value })}
                     style={[
                       styles.roleOption,
                       {
-                        borderColor: formData.rol === role.value ? role.color : theme.colors.disabled,
-                        backgroundColor: formData.rol === role.value ? role.color + '10' : 'transparent',
+                        borderColor: formData.role === role.value ? role.color : theme.colors.disabled,
+                        backgroundColor: formData.role === role.value ? role.color + '10' : 'transparent',
                       },
                     ]}
                   >
                     <FontAwesome
                       name={role.icon}
                       size={20}
-                      color={formData.rol === role.value ? role.color : theme.colors.disabled}
+                      color={formData.role === role.value ? role.color : theme.colors.disabled}
                     />
                     <Text
                       style={[
                         styles.roleOptionText,
                         {
-                          color: formData.rol === role.value ? role.color : theme.colors.disabled,
-                          fontWeight: formData.rol === role.value ? '700' : '400',
+                          color: formData.role === role.value ? role.color : theme.colors.disabled,
+                          fontWeight: formData.role === role.value ? '700' : '400',
                         },
                       ]}
                     >
