@@ -1,7 +1,20 @@
-// Load API_URL from environment or use default localhost
-// For development: use your PC's local IP (e.g., 192.168.1.100)
-// For Android emulator: http://10.0.2.2:8000/api
-// For iOS simulator: http://127.0.0.1:8000/api
-// Default for local development web (use 127.0.0.1).
-// For Android emulator: use 10.0.2.2. For iOS simulator: use 127.0.0.1. For physical device: use your PC LAN IP.
-export const API_URL = process.env.REACT_APP_API_URL || 'http://192.168.137.83:8000/api';
+import { Platform } from 'react-native';
+
+// Detecta si es Android emulator, iOS simulator o web
+const getApiUrl = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Para Android y iOS: usar IP local
+  if (Platform.OS === 'android' || Platform.OS === 'ios') {
+    // Asegúrate de que 192.168.100.61 es la IP de tu máquina dev
+    return 'http://192.168.100.61:8000/api';
+  }
+  
+  // Para web: usar localhost
+  return 'http://localhost:8000/api';
+};
+
+export const API_URL = getApiUrl();
+export const API_URL_WEB = 'http://192.168.100.61:8000'; // URL sin /api para debug

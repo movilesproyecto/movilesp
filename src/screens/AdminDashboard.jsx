@@ -24,7 +24,7 @@ import { useAppContext } from "../context/AppContext";
 
 const AdminDashboard = ({ navigation }) => {
   const theme = useTheme();
-  const { departments, user, canDeleteDepartment, apiDeleteDepartment, reservations, fetchReservations, authToken } = useAppContext();
+  const { departments, user, canDeleteDepartment, apiDeleteDepartment, reservations, fetchAllReservations, authToken } = useAppContext();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const [activeTab, setActiveTab] = useState("departamentos");
@@ -33,12 +33,14 @@ const AdminDashboard = ({ navigation }) => {
   const [deleteDialogVisible, setDeleteDialogVisible] = useState(false);
   const [departmentToDelete, setDepartmentToDelete] = useState(null);
 
-  // Cargar reservas al montar el componente
+  // Cargar todas las reservas al montar el componente
   useEffect(() => {
+    console.log('[AdminDashboard] useEffect triggered, authToken:', !!authToken);
     if (authToken) {
-      fetchReservations();
+      console.log('[AdminDashboard] Calling fetchAllReservations...');
+      fetchAllReservations();
     }
-  }, [authToken, fetchReservations]);
+  }, [authToken, fetchAllReservations]);
 
   const [users] = useState([
     {
@@ -441,7 +443,7 @@ const AdminDashboard = ({ navigation }) => {
                     <Text
                       style={[styles.resName, { color: theme.colors.text }]}
                     >
-                      Usuario
+                      {res.userName || 'Usuario desconocido'}
                     </Text>
                     <Text
                       style={[

@@ -21,6 +21,7 @@ import { useAppContext } from "../context/AppContext";
 import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import ConfirmDialog from "../components/ConfirmDialog";
+import ImageCarousel from "../components/ImageCarousel";
 
 const FavoritesScreen = ({ navigation }) => {
   const theme = useTheme();
@@ -190,6 +191,8 @@ const FavoritesScreen = ({ navigation }) => {
                           })
                         }
                       >
+                        <ImageCarousel images={dept.images} imageBinary={dept.image_binary} />
+                        
                         <View style={styles.deptHeader}>
                           <Text style={styles.deptName} numberOfLines={1}>
                             {dept.name}

@@ -44,17 +44,24 @@ const SuperAdminDashboard = ({ navigation }) => {
     const totalUsers = registeredUsers.length;
     const totalDepartments = departments.length;
     const activeReservations = reservations.filter(r => r.status === 'confirmed' || r.status === 'approved').length;
-    const totalEarnings = monthlyEarnings.reduce((sum, month) => sum + month.earnings, 0);
-    const averageRating = departments.length > 0 
-      ? (departments.reduce((sum, dept) => sum + (dept.rating || 0), 0) / departments.length).toFixed(1)
-      : 0;
+    const totalEarnings = monthlyEarnings.reduce((sum, month) => sum + (month.earnings || 0), 0);
+    
+    // Calcular rating promedio de forma segura
+    let averageRating = 0;
+    if (departments.length > 0) {
+      const totalRating = departments.reduce((sum, dept) => {
+        const deptRating = parseFloat(dept.rating || 0);
+        return sum + (isNaN(deptRating) ? 0 : deptRating);
+      }, 0);
+      averageRating = (totalRating / departments.length).toFixed(1);
+    }
 
     return {
       totalUsers,
       totalDepartments,
       activeReservations,
       totalEarnings,
-      averageRating,
+      averageRating: isNaN(averageRating) ? 0 : parseFloat(averageRating),
     };
   }, [registeredUsers, departments, reservations, monthlyEarnings]);
 
@@ -116,7 +123,7 @@ const SuperAdminDashboard = ({ navigation }) => {
   }));
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.colors.primary }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -126,8 +133,9 @@ const SuperAdminDashboard = ({ navigation }) => {
         <Text style={styles.headerTitle}>Panel Super Administrador</Text>
       </View>
 
-      {/* Tarjetas de estadísticas principales */}
-      <View style={styles.statsGrid}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 16, paddingTop: 16, flexGrow: 1 }} style={{ flex: 1 }}>
+        {/* Tarjetas de estadísticas principales */}
+        <View style={styles.statsGrid}>
         <StatCard 
           title="Usuarios"
           value={stats.totalUsers}
@@ -157,142 +165,145 @@ const SuperAdminDashboard = ({ navigation }) => {
           theme={theme}
           suffix="/5"
         />
-      </View>
+        </View>
 
-      {/* Ganancias Totales */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Text style={styles.cardTitle}>Ganancias Totales (Año)</Text>
-          <Text style={[styles.bigNumber, { color: theme.colors.primary }]}>
-            ${stats.totalEarnings.toLocaleString('es-CO')}
-          </Text>
-          <Text style={[styles.subtitle, { color: theme.colors.disabled }]}>
-            Basado en {monthlyEarnings.length} meses de historial
-          </Text>
-        </Card.Content>
-      </Card>
-
-      {/* Gráfico de Ganancias Mensuales */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Text style={styles.cardTitle}>Ganancias Mensuales (Últimos 6 meses)</Text>
-          <View style={styles.chartContainer}>
-            <LineChart
-              data={lineChartData}
-              width={chartWidth}
-              height={250}
-              chartConfig={{
-                backgroundGradientFrom: theme.colors.surface,
-                backgroundGradientTo: theme.colors.surface,
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                style: { borderRadius: 16 },
-                propsForDots: {
-                  r: '6',
-                  strokeWidth: '2',
-                  stroke: theme.colors.primary,
-                },
-              }}
-              bezier
-              style={{ marginVertical: 8, borderRadius: 16 }}
-            />
-          </View>
-        </Card.Content>
-      </Card>
-
-      {/* Gráfico de Ocupación */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Text style={styles.cardTitle}>Tasa de Ocupación (%)</Text>
-          <View style={styles.chartContainer}>
-            <BarChart
-              data={occupancyData}
-              width={chartWidth}
-              height={250}
-              chartConfig={{
-                backgroundGradientFrom: theme.colors.surface,
-                backgroundGradientTo: theme.colors.surface,
-                color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                style: { borderRadius: 16 },
-                barPercentage: 0.7,
-              }}
-              style={{ marginVertical: 8, borderRadius: 16 }}
-            />
-          </View>
-        </Card.Content>
-      </Card>
-
-      {/* Tabla de Ganancias Mensuales Detallada */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Text style={styles.cardTitle}>Registro Detallado de Ganancias</Text>
-          <View style={styles.tableContainer}>
-            <View style={[styles.tableHeader, { borderBottomColor: theme.colors.disabled }]}>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Mes</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Ganancias</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Reservas</Text>
-              <Text style={[styles.tableHeaderText, { flex: 1 }]}>Ocupación</Text>
-            </View>
-            {monthlyEarnings.map((month, index) => (
-              <View key={index} style={[styles.tableRow, { backgroundColor: index % 2 === 0 ? theme.colors.surface : theme.colors.background }]}>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{month.month}</Text>
-                <Text style={[styles.tableCell, { flex: 1, color: theme.colors.primary }]}>
-                  ${month.earnings.toLocaleString('es-CO')}
-                </Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{month.reservations}</Text>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{month.occupancy}%</Text>
-              </View>
-            ))}
-          </View>
-        </Card.Content>
-      </Card>
-
-      {/* Gráfico de Distribución de Reservas */}
-      {pieChartData.length > 0 && (
+        {/* Ganancias Totales */}
         <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Card.Content>
-            <Text style={styles.cardTitle}>Distribución de Reservas</Text>
+            <Text style={styles.cardTitle}>Ganancias Totales (Año)</Text>
+            <Text style={[styles.bigNumber, { color: theme.colors.primary }]}>
+              ${stats.totalEarnings.toLocaleString('es-CO')}
+            </Text>
+            <Text style={[styles.subtitle, { color: theme.colors.disabled }]}>
+              Basado en {monthlyEarnings.length} meses de historial
+            </Text>
+          </Card.Content>
+        </Card>
+
+        {/* Gráfico de Ganancias Mensuales */}
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text style={styles.cardTitle}>Ganancias Mensuales (Últimos 6 meses)</Text>
             <View style={styles.chartContainer}>
-              <PieChart
-                data={pieChartData}
+              <LineChart
+                data={lineChartData}
                 width={chartWidth}
                 height={250}
                 chartConfig={{
+                  backgroundGradientFrom: theme.colors.surface,
+                  backgroundGradientTo: theme.colors.surface,
                   color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                   labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
                   style: { borderRadius: 16 },
+                  propsForDots: {
+                    r: '6',
+                    strokeWidth: '2',
+                    stroke: theme.colors.primary,
+                  },
                 }}
-                accessor="count"
-                backgroundColor="transparent"
-                paddingLeft="15"
+                bezier
                 style={{ marginVertical: 8, borderRadius: 16 }}
               />
             </View>
           </Card.Content>
         </Card>
-      )}
 
-      {/* Resumen de Estadísticas */}
-      <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-        <Card.Content>
-          <Text style={styles.cardTitle}>Resumen General</Text>
-          <EarningsSummary stats={stats} theme={theme} />
-        </Card.Content>
-      </Card>
+        {/* Gráfico de Ocupación */}
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text style={styles.cardTitle}>Tasa de Ocupación (%)</Text>
+            <View style={styles.chartContainer}>
+              <BarChart
+                data={occupancyData}
+                width={chartWidth}
+                height={250}
+                chartConfig={{
+                  backgroundGradientFrom: theme.colors.surface,
+                  backgroundGradientTo: theme.colors.surface,
+                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  style: { borderRadius: 16 },
+                  barPercentage: 0.7,
+                }}
+                style={{ marginVertical: 8, borderRadius: 16 }}
+              />
+            </View>
+          </Card.Content>
+        </Card>
 
-      <View style={{ height: 20 }} />
-    </ScrollView>
+        {/* Tabla de Ganancias Mensuales Detallada */}
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text style={styles.cardTitle}>Registro Detallado de Ganancias</Text>
+            <View style={styles.tableContainer}>
+              <View style={[styles.tableHeader, { borderBottomColor: theme.colors.disabled }]}>
+                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Mes</Text>
+                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Ganancias</Text>
+                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Reservas</Text>
+                <Text style={[styles.tableHeaderText, { flex: 1 }]}>Ocupación</Text>
+              </View>
+              {monthlyEarnings.map((month, index) => (
+                <View key={index} style={[styles.tableRow, { backgroundColor: index % 2 === 0 ? theme.colors.surface : theme.colors.background }]}>
+                  <Text style={[styles.tableCell, { flex: 1 }]}>{month.month}</Text>
+                  <Text style={[styles.tableCell, { flex: 1, color: theme.colors.primary }]}>
+                    ${month.earnings.toLocaleString('es-CO')}
+                  </Text>
+                  <Text style={[styles.tableCell, { flex: 1 }]}>{month.reservations}</Text>
+                  <Text style={[styles.tableCell, { flex: 1 }]}>{month.occupancy}%</Text>
+                </View>
+              ))}
+            </View>
+          </Card.Content>
+        </Card>
+
+        {/* Gráfico de Distribución de Reservas */}
+        {pieChartData.length > 0 && (
+          <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+            <Card.Content>
+              <Text style={styles.cardTitle}>Distribución de Reservas</Text>
+              <View style={styles.chartContainer}>
+                <PieChart
+                  data={pieChartData}
+                  width={chartWidth}
+                  height={250}
+                  chartConfig={{
+                    color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                    style: { borderRadius: 16 },
+                  }}
+                  accessor="count"
+                  backgroundColor="transparent"
+                  paddingLeft="15"
+                  style={{ marginVertical: 8, borderRadius: 16 }}
+                />
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+
+        {/* Resumen de Estadísticas */}
+        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+          <Card.Content>
+            <Text style={styles.cardTitle}>Resumen General</Text>
+            <EarningsSummary stats={stats} theme={theme} />
+          </Card.Content>
+        </Card>
+
+        <View style={{ height: 20 }} />
+      </ScrollView>
+    </View>
   );
 };
 
 // Componente StatCard reutilizable
 const StatCard = ({ title, value, icon, color, theme, suffix = '' }) => (
-  <Card style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
+  <Card style={[styles.statCard, { backgroundColor: theme.colors.surface, borderLeftColor: color, borderLeftWidth: 4 }]}>
     <Card.Content style={styles.statCardContent}>
-      <FontAwesome name={icon} size={24} color={color} />
+      <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
+        <FontAwesome name={icon} size={28} color={color} />
+      </View>
       <Text style={[styles.statValue, { color }]}>
-        {value}{suffix}
+        {typeof value === 'number' && !suffix ? value.toLocaleString() : value}{suffix}
       </Text>
       <Text style={[styles.statLabel, { color: theme.colors.disabled }]}>
         {title}
@@ -330,15 +341,17 @@ const EarningsSummary = ({ stats, theme }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    paddingTop: 32,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
     borderRadius: 12,
-    marginBottom: 20,
+    marginBottom: 0,
     gap: 12,
+    backgroundColor: '#37474F',
   },
   backButton: {
     padding: 8,
@@ -359,6 +372,14 @@ const styles = StyleSheet.create({
   statCard: {
     width: '48%',
     borderRadius: 12,
+    marginBottom: 8,
+  },
+  iconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 8,
   },
   statCardContent: {

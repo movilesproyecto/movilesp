@@ -5,6 +5,8 @@ import { API_URL } from '../config';
 
 // API client centralizado para el proyecto "departamentos"
 // `API_URL` ya incluye la ruta `/api` según `src/config.js`
+console.log('[API_CLIENT] Base URL:', API_URL, 'Platform:', Platform.OS);
+
 const apiClient = axios.create({
   baseURL: API_URL,
   timeout: 15000, // 15 segundos de timeout (aumentado para dev lento)
@@ -24,6 +26,7 @@ apiClient.interceptors.request.use(
       }
       // Log para debug (desarrollo)
       config.metadata = { startTime: Date.now() };
+      console.log('[API_REQUEST] Attempting:', config.method?.toUpperCase(), API_URL + config.url);
     } catch (e) {
       // ignore
     }
@@ -44,6 +47,8 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     // Log de errores con tiempo
+    const url = error.config?.url ? (API_URL + error.config.url) : 'unknown';
+    console.error('[API_ERROR] Failed to reach:', url, 'Error:', error.message, 'Code:', error.code);
     if (error.config?.metadata) {
       const duration = Date.now() - error.config.metadata.startTime;
       console.warn(`[API] ${error.config.method?.toUpperCase()} ${error.config.url} - FAILED (${duration}ms): ${error.message}`);

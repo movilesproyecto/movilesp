@@ -496,6 +496,54 @@ export function AppProvider({ children }) {
         }
     };
 
+    // Fetch ALL reservations for admin/superadmin (no filtering by user)
+    const fetchAllReservations = async () => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try {
+            // Use the standard /reservations endpoint which should return all reservations for admin users
+            const res = await apiClient.get('/reservations');
+            
+            console.log('[API] /reservations raw response:', res.data);
+            
+            // Handle paginated response (Laravel paginate)
+            let reservationsList = [];
+            if (res.data?.data && Array.isArray(res.data.data)) {
+                // Paginado: { data: [...], current_page, total, etc }
+                reservationsList = res.data.data;
+            } else if (Array.isArray(res.data)) {
+                // Array directo
+                reservationsList = res.data;
+            } else if (res.data?.data) {
+                // Nested data
+                reservationsList = Array.isArray(res.data.data) ? res.data.data : [];
+            }
+            
+            console.log('[API] Parsed reservations count:', reservationsList.length);
+            
+            setReservations(
+                reservationsList.map(r => ({
+                    id: String(r.id),
+                    deptId: String(r.department_id),
+                    departmentName: r.department?.name || 'N/A',
+                    date: r.reservation_date,
+                    time: r.reservation_time,
+                    duration: r.duration,
+                    status: r.status || 'pending',
+                    amount: r.amount || 0,
+                    paymentMethod: r.payment_method,
+                    notes: r.notes,
+                    userId: r.user_id,
+                    userName: r.user?.name || r.user?.email || 'Unknown',
+                }))
+            );
+            console.log('[API] Fetched all reservations:', reservationsList.length);
+            return { success: true, data: reservationsList };
+        } catch (e) {
+            console.error('Error fetching all reservations:', e.response?.data || e.message);
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
     const createReservation = async (deptId, date, time, duration, paymentMethod = null, notes = '') => {
         if (!authToken) return { success: false, message: 'Not authenticated' };
         try {
@@ -1070,6 +1118,33 @@ export function AppProvider({ children }) {
         return { success: true, data: newU };
     };
 
+    // Fetch all users from API (for admin/superadmin)
+    const fetchUsers = async () => {
+        if (!authToken) return { success: false, message: 'Not authenticated' };
+        try {
+            const res = await apiClient.get('/users');
+            const data = res.data?.data || res.data;
+            const usersList = Array.isArray(data) ? data : (data.data || []);
+            
+            // Convertir formato del backend al formato del frontend
+            const mappedUsers = usersList.map(u => ({
+                id: u.id,
+                nombre: u.name,
+                correo: u.email,
+                role: u.role,
+                status: 'activo',
+                ingreso: u.created_at ? u.created_at.split('T')[0] : '',
+            }));
+            
+            setRegisteredUsers(mappedUsers);
+            console.log('[API] Fetched users:', mappedUsers.length);
+            return { success: true, data: mappedUsers };
+        } catch (e) {
+            console.error('Error fetching users:', e.response?.data || e.message);
+            return { success: false, error: e.response?.data || e.message };
+        }
+    };
+
     const removeUser = (correo) => {
         if (!canManageUsers(user)) return { success: false, message: 'No tienes permisos para eliminar usuarios.' };
         setRegisteredUsers((s) => s.filter((u) => u.correo.toLowerCase() !== correo.toLowerCase()));
@@ -1333,6 +1408,7 @@ export function AppProvider({ children }) {
                 submitReview,
                 apiUploadImages,
                 fetchReservations,
+                fetchAllReservations,
                 createReservation,
                 cancelReservation,
                 completeReservation,
@@ -1377,6 +1453,7 @@ export function AppProvider({ children }) {
                 roleLabel,
                 registeredUsers,
                 addUser,
+                fetchUsers,
                 removeUser,
                 changeUserRole,
                 updateUserProfile,

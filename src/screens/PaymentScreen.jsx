@@ -77,6 +77,8 @@ const PaymentScreen = ({ route, navigation }) => {
       setLoading(false);
 
       if (result.success) {
+        // Mostrar confirmación con snackbar y alerta
+        showSnackbar('✓ Reserva guardada exitosamente', 4000);
         Alert.alert(
           'Pago realizado',
           `Tu pago con ${paymentMethods.find(m => m.id === selectedMethod)?.name} ha sido procesado exitosamente.\n\nTu reserva ha sido confirmada.`,
@@ -90,9 +92,24 @@ const PaymentScreen = ({ route, navigation }) => {
           ]
         );
       } else {
-        const errorMsg = typeof result.message === 'string' 
-          ? result.message 
-          : JSON.stringify(result.error || result.message || 'Error desconocido');
+        let errorMsg = 'Error al crear la reserva';
+        
+        if (result.message) {
+          errorMsg = typeof result.message === 'string' 
+            ? result.message 
+            : JSON.stringify(result.message);
+        } else if (result.error) {
+          if (typeof result.error === 'string') {
+            errorMsg = result.error;
+          } else if (result.error.message) {
+            errorMsg = result.error.message;
+          } else {
+            errorMsg = JSON.stringify(result.error);
+          }
+        }
+        
+        console.error('[Payment] Error result:', result);
+        showSnackbar('✗ Error al guardar la reserva', 4000);
         Alert.alert('Error', errorMsg);
       }
     } catch (e) {

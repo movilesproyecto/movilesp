@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -24,23 +24,26 @@ import { useAppContext } from '../context/AppContext';
 
 const UserManagement = ({ navigation }) => {
   const theme = useTheme();
-  const { user, isSuperAdmin } = useAppContext();
+  const { user, isSuperAdmin, registeredUsers, addUser, fetchUsers, authToken } = useAppContext();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
-    email: '',
+    correo: '',
     password: '',
     role: 'user',
   });
-  const [users, setUsers] = useState([
-    { id: 1, nombre: 'Johan Gamer', email: 'johan11gamerez@gmail.com', role: 'user', status: 'activo' },
-    { id: 2, nombre: 'Admin Demo', email: 'admin@demo.com', role: 'admin', status: 'activo' },
-    { id: 3, nombre: 'Root System', email: 'root@demo.com', role: 'superadmin', status: 'activo' },
-  ]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // Cargar usuarios al montar el componente
+  useEffect(() => {
+    if (authToken) {
+      fetchUsers();
+    }
+  }, [authToken, fetchUsers]);
 
   // Verificar permisos
   if (!isSuperAdmin(user)) {
@@ -65,24 +68,49 @@ const UserManagement = ({ navigation }) => {
     );
   }
 
-  const handleCreateUser = () => {
-    if (!formData.nombre.trim() || !formData.email.trim() || !formData.password.trim()) {
+  const handleCreateUser = async () => {
+    if (!formData.nombre.trim() || !formData.correo.trim() || !formData.password.trim()) {
       Alert.alert('Error', 'Por favor completa todos los campos');
       return;
     }
 
-    const newUser = {
-      id: users.length + 1,
-      nombre: formData.nombre,
-      email: formData.email,
-      role: formData.role,
-      status: 'activo',
-    };
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.correo)) {
+      Alert.alert('Error', 'Por favor ingresa un email válido');
+      return;
+    }
 
-    setUsers([...users, newUser]);
-    setFormData({ nombre: '', email: '', password: '', role: 'user' });
-    setShowModal(false);
-    Alert.alert('Éxito', `Usuario ${newUser.nombre} creado con rol ${newUser.role}`);
+    // Validar contraseña
+    if (formData.password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await addUser({
+        nombre: formData.nombre,
+        correo: formData.correo,
+        password: formData.password,
+        role: formData.role,
+      });
+
+      setLoading(false);
+
+      if (result.success) {
+        Alert.alert('Éxito', `Usuario ${formData.nombre} creado como ${formData.role}`);
+        setFormData({ nombre: '', correo: '', password: '', role: 'user' });
+        setShowModal(false);
+        // Recargar usuarios
+        fetchUsers();
+      } else {
+        Alert.alert('Error', result.message || 'Error al crear usuario');
+      }
+    } catch (error) {
+      setLoading(false);
+      Alert.alert('Error', error.message || 'Ocurrió un error al crear el usuario');
+    }
   };
 
   const handleDeleteUser = (userId) => {
@@ -94,9 +122,9 @@ const UserManagement = ({ navigation }) => {
         {
           text: 'Eliminar',
           onPress: () => {
-            setUsers(users.filter(u => u.id !== userId));
+            // TODO: Implementar delete en API
+            Alert.alert('Info', 'Función de eliminar aún no implementada');
             setShowDetailModal(false);
-            Alert.alert('Éxito', 'Usuario eliminado correctamente');
           },
           style: 'destructive',
         },
@@ -128,40 +156,46 @@ const UserManagement = ({ navigation }) => {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        contentContainerStyle={{ paddingBottom: 20, flexGrow: 1 }}
+        style={{ flex: 1 }}
+      >
         {/* Info Card */}
-        <Card style={[styles.card, { backgroundColor: theme.colors.surface }]}>
-          <Card.Content>
-            <View style={styles.statsRow}>
-              <View style={styles.statItem}>
+        <View style={{ marginHorizontal: 16, marginVertical: 16, gap: 10 }}>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <Card style={[styles.statCard, { backgroundColor: theme.colors.primary + '15' }]}>
+              <Card.Content style={{ alignItems: 'center', padding: 16 }}>
                 <Text style={[styles.statNumber, { color: theme.colors.primary }]}>
-                  {users.length}
+                  {registeredUsers.length}
                 </Text>
-                <Text style={[styles.statLabel, { color: theme.colors.disabled }]}>
+                <Text style={[styles.statLabel, { color: theme.colors.text, marginTop: 8 }]}>
                   Total Usuarios
                 </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
+              </Card.Content>
+            </Card>
+            <Card style={[styles.statCard, { backgroundColor: '#4CAF5015' }]}>
+              <Card.Content style={{ alignItems: 'center', padding: 16 }}>
                 <Text style={[styles.statNumber, { color: '#4CAF50' }]}>
-                  {users.filter(u => u.status === 'activo').length}
+                  {registeredUsers.filter(u => u.status === 'activo').length}
                 </Text>
-                <Text style={[styles.statLabel, { color: theme.colors.disabled }]}>
+                <Text style={[styles.statLabel, { color: theme.colors.text, marginTop: 8 }]}>
                   Activos
                 </Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={[styles.statNumber, { color: '#E91E63' }]}>
-                  {users.filter(u => u.role === 'superadmin').length}
-                </Text>
-                <Text style={[styles.statLabel, { color: theme.colors.disabled }]}>
-                  SuperAdmins
-                </Text>
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
+              </Card.Content>
+            </Card>
+          </View>
+          <Card style={[styles.statCard, { backgroundColor: '#E91E6315' }]}>
+            <Card.Content style={{ alignItems: 'center', padding: 16 }}>
+              <Text style={[styles.statNumber, { color: '#E91E63' }]}>
+                {registeredUsers.filter(u => u.role === 'superadmin').length}
+              </Text>
+              <Text style={[styles.statLabel, { color: theme.colors.text, marginTop: 8 }]}>
+                SuperAdmins
+              </Text>
+            </Card.Content>
+          </Card>
+        </View>
 
         {/* Botón Crear Usuario */}
         <Button
@@ -179,63 +213,72 @@ const UserManagement = ({ navigation }) => {
           Usuarios del Sistema
         </Text>
 
-        {users.map((u) => (
-          <TouchableOpacity
-            key={u.id}
-            onPress={() => {
-              setSelectedUser(u);
-              setShowDetailModal(true);
-            }}
-          >
-            <Card style={[styles.userCard, { backgroundColor: theme.colors.surface }]}>
-              <View style={styles.userCardContent}>
-                <Avatar.Text
-                  size={50}
-                  label={u.nombre.substring(0, 2).toUpperCase()}
-                  style={{ backgroundColor: getRoleColor(u.role) }}
-                />
-                <View style={styles.userCardInfo}>
-                  <Text style={[styles.userCardName, { color: theme.colors.text }]}>
-                    {u.nombre}
-                  </Text>
-                  <Text style={[styles.userCardEmail, { color: theme.colors.disabled }]}>
-                    {u.email}
-                  </Text>
-                  <View style={styles.userCardMeta}>
-                    <Chip
-                      label={u.role.toUpperCase()}
-                      compact
-                      style={{
-                        backgroundColor: getRoleColor(u.role) + '20',
-                      }}
-                      textStyle={{
-                        color: getRoleColor(u.role),
-                        fontSize: 11,
-                        fontWeight: '700',
-                      }}
-                    />
-                    <Chip
-                      label={u.status}
-                      compact
-                      style={{
-                        backgroundColor: '#4CAF5020',
-                      }}
-                      textStyle={{
-                        color: '#4CAF50',
-                        fontSize: 11,
-                      }}
-                    />
+        {registeredUsers && registeredUsers.length > 0 ? (
+          registeredUsers.map((u, index) => (
+            <TouchableOpacity
+              key={u.id || `user-${index}`}
+              onPress={() => {
+                setSelectedUser(u);
+                setShowDetailModal(true);
+              }}
+            >
+              <Card style={[styles.userCard, { backgroundColor: theme.colors.surface }]}>
+                <View style={styles.userCardContent}>
+                  <Avatar.Text
+                    size={50}
+                    label={(u.nombre || 'U').substring(0, 2).toUpperCase()}
+                    style={{ backgroundColor: getRoleColor(u.role) }}
+                  />
+                  <View style={styles.userCardInfo}>
+                    <Text style={[styles.userCardName, { color: theme.colors.text }]}>
+                      {u.nombre || 'Usuario'}
+                    </Text>
+                    <Text style={[styles.userCardEmail, { color: theme.colors.disabled }]}>
+                      {u.correo || 'N/A'}
+                    </Text>
+                    <View style={styles.userCardMeta}>
+                      <Chip
+                        label={(u.role || 'user').toUpperCase()}
+                        compact
+                        style={{
+                          backgroundColor: getRoleColor(u.role) + '20',
+                        }}
+                        textStyle={{
+                          color: getRoleColor(u.role),
+                          fontSize: 11,
+                          fontWeight: '700',
+                        }}
+                      />
+                      <Chip
+                        label={u.status || 'activo'}
+                        compact
+                        style={{
+                          backgroundColor: '#4CAF5020',
+                        }}
+                        textStyle={{
+                          color: '#4CAF50',
+                          fontSize: 11,
+                        }}
+                      />
+                    </View>
                   </View>
+                  <FontAwesome
+                    name="chevron-right"
+                    size={16}
+                    color={theme.colors.disabled}
+                  />
                 </View>
-                <FontAwesome
-                  name="chevron-right"
-                  size={16}
-                  color={theme.colors.disabled}
-                />
-              </View>
-            </Card>
-          </TouchableOpacity>
-        ))}
+              </Card>
+            </TouchableOpacity>
+          ))
+        ) : (
+          <View style={{ alignItems: 'center', justifyContent: 'center', padding: 40 }}>
+            <FontAwesome name="users" size={40} color={theme.colors.disabled} />
+            <Text style={{ color: theme.colors.disabled, marginTop: 12 }}>
+              No hay usuarios registrados
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Modal Crear Usuario */}
@@ -279,8 +322,8 @@ const UserManagement = ({ navigation }) => {
                 <RNTextInput
                   placeholder="usuario@ejemplo.com"
                   placeholderTextColor={theme.colors.disabled}
-                  value={formData.email}
-                  onChangeText={(text) => setFormData({ ...formData, email: text })}
+                  value={formData.correo}
+                  onChangeText={(text) => setFormData({ ...formData, correo: text })}
                   keyboardType="email-address"
                   style={{ color: theme.colors.text }}
                 />
@@ -376,20 +419,20 @@ const UserManagement = ({ navigation }) => {
           style={{ backgroundColor: theme.colors.background }}
         >
           <Dialog.Title style={{ color: theme.colors.text }}>
-            {selectedUser?.nombre}
+            {selectedUser?.nombre || 'Usuario'}
           </Dialog.Title>
           <Dialog.Content>
             <Text style={{ color: theme.colors.disabled, marginBottom: 8 }}>
-              📧 {selectedUser?.email}
+              📧 {selectedUser?.correo || 'N/A'}
             </Text>
             <Text style={{ color: theme.colors.text, marginBottom: 8, fontWeight: '600' }}>
-              Rol: {selectedUser?.rol?.toUpperCase()}
+              Rol: {(selectedUser?.role || 'user').toUpperCase()}
             </Text>
             <Text style={{ color: theme.colors.text, marginBottom: 12 }}>
-              Estado: {selectedUser?.status}
+              Estado: {selectedUser?.status || 'activo'}
             </Text>
 
-            {selectedUser?.rol === 'user' && (
+            {selectedUser?.role === 'user' && (
               <View style={{ backgroundColor: '#FFF3E0', padding: 8, borderRadius: 6, marginBottom: 12 }}>
                 <Text style={{ color: '#E65100', fontSize: 12 }}>
                   💡 Puedes cambiar el rol de este usuario a Admin o SuperAdmin
@@ -424,7 +467,10 @@ const createStyles = (theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      padding: 16,
+      paddingTop: 32,
+      paddingHorizontal: 16,
+      paddingBottom: 16,
+      backgroundColor: '#37474F',
     },
     backButton: {
       padding: 8,
@@ -450,27 +496,35 @@ const createStyles = (theme) =>
       marginVertical: 12,
       borderRadius: 12,
     },
+    statCard: {
+      flex: 1,
+      borderRadius: 12,
+      elevation: 3,
+    },
     statsRow: {
       flexDirection: 'row',
       justifyContent: 'space-around',
       alignItems: 'center',
+      paddingVertical: 20,
     },
     statItem: {
       alignItems: 'center',
       flex: 1,
+      paddingVertical: 8,
     },
     statNumber: {
-      fontSize: 24,
+      fontSize: 32,
       fontWeight: 'bold',
-      marginBottom: 4,
+      marginBottom: 8,
     },
     statLabel: {
-      fontSize: 12,
+      fontSize: 13,
       textAlign: 'center',
+      fontWeight: '500',
     },
     statDivider: {
       width: 1,
-      height: 40,
+      height: 50,
       backgroundColor: '#E0E0E0',
     },
     createButton: {
