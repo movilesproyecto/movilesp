@@ -8,8 +8,8 @@ const getApiUrl = () => {
   
   // Para Android y iOS: usar IP local
   if (Platform.OS === 'android' || Platform.OS === 'ios') {
-    // Asegúrate de que 192.168.100.61 es la IP de tu máquina dev
-    return 'http://192.168.100.61:8000/api';
+    // Asegúrate de que 192.168.100.13 es la IP de tu máquina dev
+    return 'http://192.168.100.13:8000/api';
   }
   
   // Para web: usar localhost
@@ -17,4 +17,4 @@ const getApiUrl = () => {
 };
 
 export const API_URL = getApiUrl();
-export const API_URL_WEB = 'http://192.168.100.61:8000'; // URL sin /api para debug
+export const API_URL_WEB = 'http://192.168.100.13:8000'; // URL sin /api para debug
